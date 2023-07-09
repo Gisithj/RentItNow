@@ -1,8 +1,15 @@
-﻿namespace RentX.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace RentX.Models
 {
     public class Admin
     {
-        public int Id { get; set; }
+        [Key]
+        public int AdminId { get; set; }
+        [Required]
+        public string Username { get; set; } = string.Empty;
+        [Required] 
+        public string Password { get; set; } = string.Empty;
 
     }
 }
