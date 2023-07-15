@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RentX", "RentX.csproj", "{7FE6867B-ACB9-4B99-90D1-E2816C3FD91E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RentItNow", "RentItNow.csproj", "{7FE6867B-ACB9-4B99-90D1-E2816C3FD91E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

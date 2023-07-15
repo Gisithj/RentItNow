@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace RentX.Models
+namespace RentItNow.Models
 {
     public class Renter
     {

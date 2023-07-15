@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace RentX.Migrations
+namespace RentItNow.Migrations
 {
     public partial class _100 : Migration
     {

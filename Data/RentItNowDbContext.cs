@@ -1,18 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using RentX.Models;
+using RentItNow.Models;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
 
-namespace RentX
+namespace RentItNow.Data
 {
-    public class RentXDbContext: DbContext
+    public class RentItNowDbContext : DbContext
     {
-        public RentXDbContext(DbContextOptions options) : base(options)
+        public RentItNowDbContext(DbContextOptions options) : base(options)
         {
-
         }
 
-        private void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>()
                 .HasOne(e => e.Renter)
@@ -31,7 +30,7 @@ namespace RentX
             modelBuilder.Entity<Renter>()
                 .HasMany(e => e.Items)
                 .WithOne(e => e.Renter)
-                .HasForeignKey(e=>e.RenterId)
+                .HasForeignKey(e => e.RenterId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
@@ -41,10 +40,10 @@ namespace RentX
                 .HasForeignKey(e => e.RentId);
 
         }
-        public DbSet<User>? Users { get; set; }
-        public DbSet<Admin>? Admins { get; set; }
-        public DbSet<Customer>? Customers { get; set; }
-        public DbSet<Renter>? Renters { get; set; }
-        public DbSet<Item>? Items { get; set; }
+        public DbSet<User> Users => Set<User>();
+        public DbSet<Admin> Admins => Set<Admin>();
+        public DbSet<Customer> Customers => Set<Customer>();
+        public DbSet<Renter> Renters => Set<Renter>();
+        public DbSet<Item> Items => Set<Item>();
     }
 }

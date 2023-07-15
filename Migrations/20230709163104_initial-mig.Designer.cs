@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using RentX;
+using RentItNow.Data;
 
 #nullable disable
 
-namespace RentX.Migrations
+namespace RentItNow.Migrations
 {
-    [DbContext(typeof(RentXDbContext))]
+    [DbContext(typeof(RentItNowDbContext))]
     [Migration("20230709163104_initial-mig")]
     partial class initialmig
     {
@@ -23,7 +23,7 @@ namespace RentX.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("RentX.Models.Admin", b =>
+            modelBuilder.Entity("RentItNow.Models.Admin", b =>
                 {
                     b.Property<int>("AdminId")
                         .ValueGeneratedOnAdd()
@@ -44,7 +44,7 @@ namespace RentX.Migrations
                     b.ToTable("Admins");
                 });
 
-            modelBuilder.Entity("RentX.Models.Customer", b =>
+            modelBuilder.Entity("RentItNow.Models.Customer", b =>
                 {
                     b.Property<int>("CustomerId")
                         .ValueGeneratedOnAdd()
@@ -79,7 +79,7 @@ namespace RentX.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("RentX.Models.Item", b =>
+            modelBuilder.Entity("RentItNow.Models.Item", b =>
                 {
                     b.Property<int>("ItemId")
                         .ValueGeneratedOnAdd()
@@ -105,7 +105,7 @@ namespace RentX.Migrations
                     b.ToTable("Items");
                 });
 
-            modelBuilder.Entity("RentX.Models.Renter", b =>
+            modelBuilder.Entity("RentItNow.Models.Renter", b =>
                 {
                     b.Property<int>("RenterId")
                         .ValueGeneratedOnAdd()
@@ -136,7 +136,7 @@ namespace RentX.Migrations
                     b.ToTable("Renters");
                 });
 
-            modelBuilder.Entity("RentX.Models.RentItem", b =>
+            modelBuilder.Entity("RentItNow.Models.RentItem", b =>
                 {
                     b.Property<int>("RentId")
                         .ValueGeneratedOnAdd()
@@ -164,7 +164,7 @@ namespace RentX.Migrations
                     b.ToTable("RentItem");
                 });
 
-            modelBuilder.Entity("RentX.Models.User", b =>
+            modelBuilder.Entity("RentItNow.Models.User", b =>
                 {
                     b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
@@ -189,20 +189,20 @@ namespace RentX.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("RentX.Models.Customer", b =>
+            modelBuilder.Entity("RentItNow.Models.Customer", b =>
                 {
-                    b.HasOne("RentX.Models.User", "User")
+                    b.HasOne("RentItNow.Models.User", "User")
                         .WithOne("Customer")
-                        .HasForeignKey("RentX.Models.Customer", "UserId")
+                        .HasForeignKey("RentItNow.Models.Customer", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("RentX.Models.Item", b =>
+            modelBuilder.Entity("RentItNow.Models.Item", b =>
                 {
-                    b.HasOne("RentX.Models.Renter", "Renter")
+                    b.HasOne("RentItNow.Models.Renter", "Renter")
                         .WithMany("Items")
                         .HasForeignKey("RenterId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -211,32 +211,32 @@ namespace RentX.Migrations
                     b.Navigation("Renter");
                 });
 
-            modelBuilder.Entity("RentX.Models.Renter", b =>
+            modelBuilder.Entity("RentItNow.Models.Renter", b =>
                 {
-                    b.HasOne("RentX.Models.User", "User")
+                    b.HasOne("RentItNow.Models.User", "User")
                         .WithOne("Renter")
-                        .HasForeignKey("RentX.Models.Renter", "UserId")
+                        .HasForeignKey("RentItNow.Models.Renter", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("RentX.Models.RentItem", b =>
+            modelBuilder.Entity("RentItNow.Models.RentItem", b =>
                 {
-                    b.HasOne("RentX.Models.Customer", "Customer")
+                    b.HasOne("RentItNow.Models.Customer", "Customer")
                         .WithMany("RentItems")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RentX.Models.Item", "item")
+                    b.HasOne("RentItNow.Models.Item", "item")
                         .WithMany()
                         .HasForeignKey("ItemID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RentX.Models.Renter", "Renter")
+                    b.HasOne("RentItNow.Models.Renter", "Renter")
                         .WithMany()
                         .HasForeignKey("RenterId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -249,17 +249,17 @@ namespace RentX.Migrations
                     b.Navigation("item");
                 });
 
-            modelBuilder.Entity("RentX.Models.Customer", b =>
+            modelBuilder.Entity("RentItNow.Models.Customer", b =>
                 {
                     b.Navigation("RentItems");
                 });
 
-            modelBuilder.Entity("RentX.Models.Renter", b =>
+            modelBuilder.Entity("RentItNow.Models.Renter", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("RentX.Models.User", b =>
+            modelBuilder.Entity("RentItNow.Models.User", b =>
                 {
                     b.Navigation("Customer");
 

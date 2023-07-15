@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RentX.Models
+namespace RentItNow.Models
 {
     public class RentItem
     {
