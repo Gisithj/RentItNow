@@ -6,11 +6,13 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RentItNow.configurations;
 using RentItNow.Core.Services;
 using RentItNow.Data;
 using RentItNow.DTOs.Rent;
 using RentItNow.DTOs.Renter;
 using RentItNow.Models;
+using System.Linq;
 
 namespace RentItNow.Controllers
 {
@@ -18,12 +20,12 @@ namespace RentItNow.Controllers
     [ApiController]
     public class RentersController : ControllerBase
     {
-        private readonly IRenterService _renterService;
         private readonly IMapper _mapper;
-        public RentersController(RentItNowDbContext context,IRenterService renterService,IMapper mapper)
+        private readonly IUnitOfWork _unitOfWork;
+        public RentersController(IMapper mapper, IUnitOfWork unitOfWork)
         {
-            _renterService = renterService;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
         // GET: api/Renters
@@ -32,15 +34,16 @@ namespace RentItNow.Controllers
         {
             try
             {
-                var renters = await _renterService.GetRenters();
+                var renters = await _unitOfWork.Renter.GetAllAsync();
 
-                if (renters.Count == 0)
+
+                if (renters.Count() == 0)
                 {
                     return NotFound("Renters not found");
                 }
 
                 List<GetRenterDto> rentersDtoList = new List<GetRenterDto>();
-
+                
                 foreach (Renter renter in renters)
                 {
                     var rentersDto = _mapper.Map<GetRenterDto>(renters);
@@ -67,7 +70,7 @@ namespace RentItNow.Controllers
 
             try
             {
-                var renter = await _renterService.GetRenterByUsername(username);
+                var renter = await _unitOfWork.Renter.GetRenterByUsernameAsync(username);
                 var renterDto = _mapper.Map<GetRenterDto>(renter);
                 return renterDto;
                 
@@ -85,7 +88,7 @@ namespace RentItNow.Controllers
         {
             try
             {
-                var renter = await _renterService.GetRenterById(id);
+                var renter = await _unitOfWork.Renter.GetByIdAsync(id);
                 var renterDto = _mapper.Map<GetRenterDto>(renter);
                 return renterDto;
 
@@ -106,7 +109,7 @@ namespace RentItNow.Controllers
                 return BadRequest();
             }
 
-            var updatedRenter = await _renterService.UpdateRenter(id, renter);
+            var updatedRenter = await _unitOfWork.Renter.UpdateAsync(renter);
             if (updatedRenter == null)
             {
                 return NoContent();
@@ -128,8 +131,10 @@ namespace RentItNow.Controllers
             try
             {
                 var renter = _mapper.Map<Renter>(renterDto);
-                var renterCreated = await _renterService.CreateRenter(renter);
-                return renterCreated;
+                var renterCreated = await _unitOfWork.Renter.AddAsync(renter);
+
+                return CreatedAtAction("GetRenterById", new { renter.RenterId }, renter);
+                
             }
             catch (Exception ex)
             {
@@ -144,7 +149,8 @@ namespace RentItNow.Controllers
         {
             try
             {
-                await _renterService.DeleteRenter(id);
+                await _unitOfWork.Renter.DeleteAsync(id);
+                await _unitOfWork.CompleteAsync();
                 return Ok("renter deleted");
             }
             catch (Exception ex)

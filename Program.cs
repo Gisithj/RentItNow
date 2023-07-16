@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RentItNow.configurations;
 using RentItNow.Core.Services;
 using RentItNow.Data;
 using RentItNow.Services;
@@ -10,7 +11,7 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
+        // AddAsync services to the container.
 
         builder.Services.AddDbContext<RentItNowDbContext>(
             options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
@@ -23,7 +24,7 @@ internal class Program
 
         builder.Services.AddSwaggerGen();
 
-        builder.Services.AddScoped<IRenterService, RenterService>();
+        builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 
         var app = builder.Build();
 
