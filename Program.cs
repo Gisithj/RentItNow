@@ -1,9 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RentItNow.configurations;
-using RentItNow.Core.Services;
 using RentItNow.Data;
-using RentItNow.Services;
-using System.Reflection.Emit;
 
 internal class Program
 {

@@ -10,7 +10,7 @@ namespace RentItNow.Services
 {
     public class RenterRepository : GenericRepository<Renter>, IRenterRepository
     {
-        public RenterRepository(RentItNowDbContext context, IMapper mapper) : base(context, mapper)
+        public RenterRepository(RentItNowDbContext context, IMapper mapper) : base(context)
         {
 
         }

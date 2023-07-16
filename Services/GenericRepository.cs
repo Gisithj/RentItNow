@@ -11,12 +11,10 @@ namespace RentItNow.Services
     {
         protected RentItNowDbContext _context;
         internal DbSet<T> dbSet;
-        protected IMapper _mapper;
-        public GenericRepository(RentItNowDbContext context, IMapper mapper)
+        public GenericRepository(RentItNowDbContext context)
         {
             _context = context;
             dbSet = context.Set<T>();
-            _mapper = mapper;
         
         }
 

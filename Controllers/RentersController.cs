@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using RentItNow.configurations;
-using RentItNow.Core.Services;
-using RentItNow.Data;
 using RentItNow.DTOs.Rent;
 using RentItNow.DTOs.Renter;
 using RentItNow.Models;
-using System.Linq;
-
 namespace RentItNow.Controllers
 {
     [Route("api/[controller]")]
