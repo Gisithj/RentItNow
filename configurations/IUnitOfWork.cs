@@ -8,6 +8,7 @@ namespace RentItNow.configurations
         ICustomerRepository Customer { get; set; }
         IRenterRepository Renter { get; set; }
         IUserRepository User { get; set; }
+        IItemRepository Item { get; set; }
         Task CompleteAsync();
         void Dispose();
     }

@@ -16,6 +16,7 @@ namespace RentItNow.configurations
         public ICustomerRepository Customer { get; set; }
         public IRenterRepository Renter { get; set; }
         public IUserRepository User { get; set; }
+        public IItemRepository Item { get; set; }
         public UnitOfWork(RentItNowDbContext context, IMapper mapper, UserManager<User> userManager, SignInManager<User> signInManager)
         {
             _context = context;

@@ -15,55 +15,6 @@ namespace RentItNow.Services
 
         }
 
-/*        public async override Task<IEnumerable<Renter>> GetAllAsync()
-        {
-            try
-            {
-                var renters =  await dbSet.ToListAsync();
-                if (renters.Count == 0)
-                {
-                    throw new Exception("Renters not found");
-                }
-                return renters;
-            }
-            catch (Exception ex)
-            {
-
-                throw new Exception(ex.Message);
-            }
-        }*/
-
-/*        public async override Task<Renter> AddAsync(Renter entity)
-        {
-            try
-            {
-                var renter = await dbSet.AddAsync(entity);
-                return renter.Entity;
-            }
-            catch (Exception ex)
-            {
-
-                throw new Exception(ex.Message);
-            }
-        }*/
-/*
-        public async override Task<Renter> GetByIdAsync(Guid id)
-        {
-            try
-            {
-                var renter =  await dbSet.FindAsync(id);
-                if(renter== null)
-                {
-                    throw new Exception("Renternot found");
-                }
-                return renter;
-            }
-            catch (Exception ex)
-            {
-
-                throw new Exception(ex.Message);
-            }
-        }*/
         public async Task<Renter> GetRenterByUsernameAsync(string renterName)
         {
 
@@ -85,56 +36,6 @@ namespace RentItNow.Services
             }
 
         }
-
-/*        public async override Task<bool> DeleteAsync(Guid id)
-        {
-            try
-            {
-                var renter = await dbSet.FindAsync(id);
-                if (renter == null)
-                {
-                    throw new Exception("Renter not found");
-                }
-                dbSet.Remove(renter);
-                return true;
-            }
-            catch (Exception)
-            {
-
-                throw ;
-            }
-        }*/
-
-/*        public async override Task<Renter> UpdateAsync(Renter entity)
-        {
-            try
-            {
-
-                if (entity == null)
-                {
-                    throw new Exception("Renter not found");
-                }
-                dbSet.Update(entity);
-                return entity;
-            }
-            catch(Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }*/
-
-/*        public override bool IsExists(Guid id)
-        {
-            var renter =  dbSet.FindAsync(id);
-            if(renter.Result != null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }*/
 
 
     }
