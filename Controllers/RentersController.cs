@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using RentItNow.configurations;
 using RentItNow.DTOs.Rent;
 using RentItNow.DTOs.Renter;
+using RentItNow.DTOs.User;
 using RentItNow.Models;
 namespace RentItNow.Controllers
 {
@@ -36,7 +37,7 @@ namespace RentItNow.Controllers
                 
                 foreach (Renter renter in renters)
                 {
-                    var rentersDto = _mapper.Map<GetRenterDto>(renters);
+                    var rentersDto = _mapper.Map<GetRenterDto>(renter);
                     rentersDtoList.Add(rentersDto);
                     
                 }
@@ -74,7 +75,7 @@ namespace RentItNow.Controllers
 
         // GET: api/Renters/GenRenterById/5
         [HttpGet("GenRenterById")]
-        public async Task<ActionResult<GetRenterDto>> GetRenterById(int id)
+        public async Task<ActionResult<GetRenterDto>> GetRenterById(Guid id)
         {
             try
             {
@@ -92,19 +93,25 @@ namespace RentItNow.Controllers
 
         // PUT: api/Renters/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRenter(int id, Renter renter)
+        public async Task<IActionResult> PutRenter(Guid id, UpdateRenterDto updateRenter)
         {
-            if (renter == null || id != renter.RenterId)
+            if (updateRenter == null)
             {
                 return BadRequest();
             }
+            var existingRenter = await _unitOfWork.Renter.GetByIdAsync(id);
+            if (existingRenter == null)
+            {
+                return BadRequest();
+            }
+            Renter renter = _mapper.Map(updateRenter,existingRenter);
 
             var updatedRenter = await _unitOfWork.Renter.UpdateAsync(renter);
             if (updatedRenter == null)
             {
                 return NoContent();
             }
-
+            await _unitOfWork.CompleteAsync();
             return Ok(updatedRenter);
         }
 
@@ -120,10 +127,22 @@ namespace RentItNow.Controllers
 
             try
             {
-                var renter = _mapper.Map<Renter>(renterDto);
-                var renterCreated = await _unitOfWork.Renter.AddAsync(renter);
+                var user = _mapper.Map<User>(renterDto);
+                var userCreated = await _unitOfWork.User.CreateUserAsync(user,renterDto.Password);
+                if(userCreated.Succeeded) {
+                    var renter = _mapper.Map<Renter>(renterDto);
+                    renter.User = user;
+                    var renterCreated = await _unitOfWork.Renter.AddAsync(renter);
+                    await _unitOfWork.CompleteAsync();
+                    return CreatedAtAction("GetRenterById", new { renter.RenterId }, renter);
+                }
+                else
+                {
+                    return BadRequest("User not created");
+                }
 
-                return CreatedAtAction("GetRenterById", new { renter.RenterId }, renter);
+               
+                
                 
             }
             catch (Exception ex)
@@ -135,7 +154,7 @@ namespace RentItNow.Controllers
 
         // DELETE: api/Renters/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRenter(int id)
+        public async Task<IActionResult> DeleteRenter(Guid id)
         {
             try
             {

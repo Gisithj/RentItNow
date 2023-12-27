@@ -10,12 +10,12 @@ namespace RentItNow.Services
 {
     public class RenterRepository : GenericRepository<Renter>, IRenterRepository
     {
-        public RenterRepository(RentItNowDbContext context, IMapper mapper) : base(context)
+        public RenterRepository(RentItNowDbContext context) : base(context)
         {
 
         }
 
-        public async override Task<IEnumerable<Renter>> GetAllAsync()
+/*        public async override Task<IEnumerable<Renter>> GetAllAsync()
         {
             try
             {
@@ -31,9 +31,9 @@ namespace RentItNow.Services
 
                 throw new Exception(ex.Message);
             }
-        }
+        }*/
 
-        public async override Task<Renter> AddAsync(Renter entity)
+/*        public async override Task<Renter> AddAsync(Renter entity)
         {
             try
             {
@@ -45,9 +45,9 @@ namespace RentItNow.Services
 
                 throw new Exception(ex.Message);
             }
-        }
-
-        public async override Task<Renter> GetByIdAsync(int id)
+        }*/
+/*
+        public async override Task<Renter> GetByIdAsync(Guid id)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace RentItNow.Services
 
                 throw new Exception(ex.Message);
             }
-        }
+        }*/
         public async Task<Renter> GetRenterByUsernameAsync(string renterName)
         {
 
@@ -86,7 +86,7 @@ namespace RentItNow.Services
 
         }
 
-        public async override Task<bool> DeleteAsync(int id)
+/*        public async override Task<bool> DeleteAsync(Guid id)
         {
             try
             {
@@ -103,31 +103,30 @@ namespace RentItNow.Services
 
                 throw ;
             }
-        }
+        }*/
 
-        public async override Task<Renter> UpdateAsync(Renter entity)
+/*        public async override Task<Renter> UpdateAsync(Renter entity)
         {
             try
             {
-                var renter = await dbSet.FindAsync(entity);
 
-                if (renter == null)
+                if (entity == null)
                 {
-                    throw new Exception();
+                    throw new Exception("Renter not found");
                 }
-                dbSet.Update(renter);
-                return renter;
+                dbSet.Update(entity);
+                return entity;
             }
             catch(Exception ex)
             {
                 throw new Exception(ex.Message);
             }
-        }
+        }*/
 
-        public override bool IsExists(int id)
+/*        public override bool IsExists(Guid id)
         {
             var renter =  dbSet.FindAsync(id);
-            if(renter != null)
+            if(renter.Result != null)
             {
                 return true;
             }
@@ -135,7 +134,7 @@ namespace RentItNow.Services
             {
                 return false;
             }
-        }
+        }*/
 
 
     }

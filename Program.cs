@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RentItNow.configurations;
 using RentItNow.Data;
+using RentItNow.Models;
 
 internal class Program
 {
@@ -20,7 +22,13 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
 
         builder.Services.AddSwaggerGen();
+        builder.Services.AddIdentity<User, IdentityRole>()
+        .AddEntityFrameworkStores<RentItNowDbContext>()
+        .AddDefaultTokenProviders();
 
+        builder.Services.AddScoped<UserManager<User>>();
+        builder.Services.AddScoped<SignInManager<User>>();
+        builder.Services.AddScoped<IUserClaimsPrincipalFactory<User>, UserClaimsPrincipalFactory<User, IdentityRole>>();
         builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 
         var app = builder.Build();

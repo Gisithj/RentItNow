@@ -1,16 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RentItNow.Models
 {
-    public class User
+    public class User: IdentityUser
     {
         [Key]
-        public int UserId { get; set; }
-        public string UserName { get; set; } = string.Empty;
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid UserId { get; set; }
+     /*   public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;*/
 
-        public Renter? Renter { get; set; }
-        public Customer? Customer { get; set; }
     }
 }

@@ -1,10 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace RentItNow.Migrations
 {
-    public partial class initialmig : Migration
+    public partial class init_mig : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -12,8 +13,7 @@ namespace RentItNow.Migrations
                 name: "Admins",
                 columns: table => new
                 {
-                    AdminId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Username = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
@@ -26,11 +26,22 @@ namespace RentItNow.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -41,13 +52,12 @@ namespace RentItNow.Migrations
                 name: "Customers",
                 columns: table => new
                 {
-                    CustomerId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CustomerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ContactNo = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false)
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -64,12 +74,11 @@ namespace RentItNow.Migrations
                 name: "Renters",
                 columns: table => new
                 {
-                    RenterId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RenterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RenterName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RenterAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ContactNo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false)
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -86,11 +95,12 @@ namespace RentItNow.Migrations
                 name: "Items",
                 columns: table => new
                 {
-                    ItemId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ItemName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ItemDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RenterId = table.Column<int>(type: "int", nullable: false)
+                    RentalPrice = table.Column<int>(type: "int", nullable: false),
+                    IsRented = table.Column<bool>(type: "bit", nullable: false),
+                    RenterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -100,44 +110,40 @@ namespace RentItNow.Migrations
                         column: x => x.RenterId,
                         principalTable: "Renters",
                         principalColumn: "RenterId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "RentItem",
+                name: "RentalItem",
                 columns: table => new
                 {
-                    RentId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ItemID = table.Column<int>(type: "int", nullable: false),
-                    CustomerId = table.Column<int>(type: "int", nullable: false),
-                    RenterId = table.Column<int>(type: "int", nullable: false)
+                    RentalId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RentalStartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RentalEndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CustomerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ItemID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RentItem", x => x.RentId);
+                    table.PrimaryKey("PK_RentalItem", x => x.RentalId);
                     table.ForeignKey(
-                        name: "FK_RentItem_Customers_CustomerId",
+                        name: "FK_RentalItem_Customers_CustomerId",
                         column: x => x.CustomerId,
                         principalTable: "Customers",
-                        principalColumn: "CustomerId");
+                        principalColumn: "CustomerId",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_RentItem_Items_ItemID",
+                        name: "FK_RentalItem_Items_ItemID",
                         column: x => x.ItemID,
                         principalTable: "Items",
-                        principalColumn: "ItemId");
-                    table.ForeignKey(
-                        name: "FK_RentItem_Renters_RenterId",
-                        column: x => x.RenterId,
-                        principalTable: "Renters",
-                        principalColumn: "RenterId");
+                        principalColumn: "ItemId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Customers_UserId",
                 table: "Customers",
-                column: "UserId",
-                unique: true);
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Items_RenterId",
@@ -145,25 +151,19 @@ namespace RentItNow.Migrations
                 column: "RenterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Renters_UserId",
-                table: "Renters",
-                column: "UserId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RentItem_CustomerId",
-                table: "RentItem",
+                name: "IX_RentalItem_CustomerId",
+                table: "RentalItem",
                 column: "CustomerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RentItem_ItemID",
-                table: "RentItem",
+                name: "IX_RentalItem_ItemID",
+                table: "RentalItem",
                 column: "ItemID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RentItem_RenterId",
-                table: "RentItem",
-                column: "RenterId");
+                name: "IX_Renters_UserId",
+                table: "Renters",
+                column: "UserId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -172,7 +172,7 @@ namespace RentItNow.Migrations
                 name: "Admins");
 
             migrationBuilder.DropTable(
-                name: "RentItem");
+                name: "RentalItem");
 
             migrationBuilder.DropTable(
                 name: "Customers");

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentItNow.Data;
 using RentItNow.Repository;
@@ -11,6 +12,7 @@ namespace RentItNow.Services
     {
         protected RentItNowDbContext _context;
         internal DbSet<T> dbSet;
+
         public GenericRepository(RentItNowDbContext context)
         {
             _context = context;
@@ -20,28 +22,88 @@ namespace RentItNow.Services
 
         public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var entities = await dbSet.ToListAsync();
+                if (entities.Count == 0)
+                {
+                    throw new Exception("Entities not found");
+                }
+                return entities;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
         }
 
-        public virtual async Task<T> GetByIdAsync(int id)
+        public virtual async Task<T> GetByIdAsync(Guid id)
         {
-            return await dbSet.FindAsync(id);
+            try
+            {
+                var renter = await dbSet.FindAsync(id);
+                if (renter == null)
+                {
+                    throw new Exception("Entity not found by id");
+                }
+                return renter;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
         }
 
         public virtual async Task<T> AddAsync(T entity)
         {
-            await dbSet.AddAsync(entity);
-            throw new NotImplementedException();
+            try
+            {
+                var addedEntity = await dbSet.AddAsync(entity);
+                return addedEntity.Entity;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
         }
 
-        public virtual async Task<bool> DeleteAsync(int id)
+        public virtual async Task<bool> DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var entity = await dbSet.FindAsync(id);
+                if (entity == null)
+                {
+                    throw new Exception("Entity not found to delete");
+                }
+                dbSet.Remove(entity);
+                return true;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public virtual async Task<T> UpdateAsync(T entity)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (entity == null)
+                {
+                    throw new Exception("Entity not found to update");
+                }
+                dbSet.Update(entity);
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
@@ -49,9 +111,18 @@ namespace RentItNow.Services
             return await dbSet.Where(predicate).ToListAsync();
         }
 
-        public virtual bool IsExists(int id)
+
+        public virtual bool IsExists(Guid id)
         {
-            throw new NotImplementedException();
+            var entity = dbSet.FindAsync(id);
+            if (entity.Result != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

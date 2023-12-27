@@ -1,13 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using RentItNow.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace RentItNow.Models
+namespace RentItNow.DTOs.Customer
 {
-    public class Customer
+    public class GetCustomerDto
     {
-        [Required]
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        
         public Guid CustomerId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -15,10 +13,6 @@ namespace RentItNow.Models
         public string Address { get; set; } = string.Empty;
 
         public Guid UserId { get; set; }
-        public User User { get; set; } = null!;
-        
-        public ICollection<RentalItem?> RentedItems { get; set; } = new List<RentalItem?>();
-
-                
+     
     }
 }

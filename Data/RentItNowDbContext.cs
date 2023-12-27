@@ -13,31 +13,32 @@ namespace RentItNow.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<User>()
-                .HasOne(e => e.Renter)
-                .WithOne(e => e.User)
-                .HasForeignKey<Renter>(e => e.RenterId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired(false);
-
-            modelBuilder.Entity<User>()
-                .HasOne(e => e.Customer)
-                .WithOne(e => e.User)
-                .HasForeignKey<Customer>(e => e.CustomerId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired(false);
-
             modelBuilder.Entity<Renter>()
                 .HasMany(e => e.Items)
                 .WithOne(e => e.Renter)
                 .HasForeignKey(e => e.RenterId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
+                .OnDelete(DeleteBehavior.Restrict);
+                
 
             modelBuilder.Entity<Customer>()
-                .HasMany(e => e.RentItems)
+                .HasMany(e => e.RentedItems)
                 .WithOne(e => e.Customer)
-                .HasForeignKey(e => e.RentId);
+                .HasForeignKey(e => e.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RentalItem>()
+                 .HasOne(ri => ri.Customer)
+                 .WithMany(c => c.RentedItems)
+                 .HasForeignKey(ri => ri.CustomerId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RentalItem>()
+                .HasOne(ri => ri.Item)
+                .WithMany()
+                .HasForeignKey(ri => ri.ItemID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
 
         }
         public DbSet<User> Users => Set<User>();
