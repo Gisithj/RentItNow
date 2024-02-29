@@ -35,8 +35,26 @@ namespace RentItNow.Services
                 throw new Exception(ex.Message);
             }
         }
+        public async Task<User> GetUserByEmailAsync(string email)
+        {
 
-        public async Task<User> GetRenterByUsernameAsync(string userName)
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    throw new Exception("user not found");
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+
+        }
+        public async Task<User> GetUserByUsernameAsync(string userName)
         {
 
             try
@@ -89,12 +107,16 @@ namespace RentItNow.Services
                 throw new Exception(ex.Message);
             }
         }*/
-        public async Task<IdentityResult> CreateUserAsync(User user,string password)
+        public async Task<IdentityResult> CreateUserAsync(User user,string? password)
         {
             try
             {
-                var userCreated = await _userManager.CreateAsync(user, password);
-                return userCreated;
+               
+                    var userCreated = await _userManager.CreateAsync(user, password);
+                    return userCreated;
+                
+                
+                
             }
             catch (Exception ex)
             {
@@ -102,7 +124,21 @@ namespace RentItNow.Services
                 throw new Exception(ex.Message);
             }
         }
-       
+
+        public async Task<IdentityResult> CreateUserAsync(User user)
+        {
+            try
+            {
+                 var userCreated = await _userManager.CreateAsync(user);
+                 return userCreated;
+            
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+        }
 
         public async override Task<User> UpdateAsync(User entity)
         {
@@ -155,26 +191,6 @@ namespace RentItNow.Services
             }
         }
 
-        public async Task<User> GetUserByUsernameAsync(string username)
-        {
-
-            try
-            {
-                var renter = await dbSet
-                                .Where(r => r.UserName == username)
-                                .FirstOrDefaultAsync();
-                if (renter == null)
-                {
-                    throw new Exception("renter not found");
-                }
-                return renter;
-            }
-            catch (Exception ex)
-            {
-
-                throw new Exception(ex.Message);
-            }
-
-        }
+     
     }
 }

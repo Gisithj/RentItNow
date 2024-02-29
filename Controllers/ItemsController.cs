@@ -37,7 +37,7 @@ namespace RentItNow.Controllers
                 var items = await _unitOfWork.Item.GetAllAsync();
 
 
-                if (items.Count() == 0)
+                if (items==null || items.Count() == 0)
                 {
                     return NotFound("Renters not found");
                 }
@@ -82,7 +82,7 @@ namespace RentItNow.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutItem(Guid id, UpdateItemDto updateItemDto)
         {
-            if (updateItemDto == null)
+            if (updateItemDto == null || !_unitOfWork.Renter.IsExists(updateItemDto.RenterId ))
             {
                 return BadRequest();
             }
@@ -96,6 +96,7 @@ namespace RentItNow.Controllers
             var updatedItem = await _unitOfWork.Item.UpdateAsync(item);
 
             await _unitOfWork.CompleteAsync();
+
             return Ok(updatedItem);
         }
 
@@ -104,19 +105,37 @@ namespace RentItNow.Controllers
         [HttpPost]
         public async Task<ActionResult<Item>> PostItem(CreateItemDto createItemDto)
         {
+     
             try
             {
+                var item = _mapper.Map<Item>(createItemDto);
+                var itemCreated = await _unitOfWork.Item.AddAsync(item);
+                    await _unitOfWork.CompleteAsync();
+                    return itemCreated;
 
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+  /*          try
+            {
+                if(!_unitOfWork.Renter.IsExists(createItemDto.RenterId)) {
+                    return NotFound("Renter not found ");
+                }
                 var item = _mapper.Map<Item>(createItemDto);
                 var itemCreated = await _unitOfWork.Item.AddAsync(item);
                 await _unitOfWork.CompleteAsync();
-                return CreatedAtAction("GetItemById", new { item.ItemId }, item);
+                return CreatedAtAction(nameof(GetItemById), new { itemCreated.ItemId }, itemCreated);
 
             }
             catch (Exception ex)
             {
                 return NotFound(ex.Message);
-            }
+            }*/
         }
 
         // DELETE: api/Items/5
@@ -128,6 +147,29 @@ namespace RentItNow.Controllers
                 await _unitOfWork.Item.DeleteAsync(id);
                 await _unitOfWork.CompleteAsync();
                 return Ok("Item deleted");
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpPost("/RentItem")]
+        public async Task<ActionResult<RentItemDto>> RentItem(RentItemDto rentItemDto)
+        {
+            try
+            {
+                if(_unitOfWork.Item.IsExists(rentItemDto.ItemID) && _unitOfWork.Customer.IsExists(rentItemDto.CustomerId)){
+                    await _unitOfWork.Item.UpdateFieldAsync(rentItemDto.ItemID, "IsRented", true);
+                    await _unitOfWork.CompleteAsync();
+                    return rentItemDto;
+                }
+                else
+                {
+                    return NotFound();
+                }
+
             }
             catch (Exception ex)
             {

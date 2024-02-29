@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RentItNow.Models;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
 
 namespace RentItNow.Data
 {
-    public class RentItNowDbContext : DbContext
+    public class RentItNowDbContext : IdentityDbContext<User>
     {
         public RentItNowDbContext(DbContextOptions options) : base(options)
         {
@@ -13,6 +14,10 @@ namespace RentItNow.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+
+
             modelBuilder.Entity<Renter>()
                 .HasMany(e => e.Items)
                 .WithOne(e => e.Renter)
@@ -41,7 +46,7 @@ namespace RentItNow.Data
 
 
         }
-        public DbSet<User> Users => Set<User>();
+        public override DbSet<User> Users => Set<User>();
         public DbSet<Admin> Admins => Set<Admin>();
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Renter> Renters => Set<Renter>();

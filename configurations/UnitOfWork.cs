@@ -12,8 +12,7 @@ namespace RentItNow.configurations
     {
         private readonly RentItNowDbContext _context;
         private readonly IMapper _mapper;
-
-        public ICustomerRepository Customer { get; set; }
+                public ICustomerRepository Customer { get; set; }
         public IRenterRepository Renter { get; set; }
         public IUserRepository User { get; set; }
         public IItemRepository Item { get; set; }
@@ -24,6 +23,7 @@ namespace RentItNow.configurations
             Customer = new CustomerRepository(context);
             Renter = new RenterRepository(context);
             User = new UserRepository(context, userManager,signInManager);
+            Item = new ItemRepository(context);
 
         }
         public async Task CompleteAsync()

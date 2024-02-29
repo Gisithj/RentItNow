@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using RentItNow.DTOs.Customer;
 using RentItNow.DTOs.Item;
 using RentItNow.DTOs.Rent;
@@ -11,7 +12,9 @@ namespace RentItNow.Mapping
     public class ModelToDtoProfile : Profile
     {
         public ModelToDtoProfile() {
-            
+
+            CreateMap<IdentityUser, User>().ReverseMap();
+
             CreateMap<CreateRenterDto, User>().ReverseMap();
             CreateMap<CreateRenterDto, Renter>().ReverseMap();
             CreateMap<CreateRenterDto, CreateUserDto>().ReverseMap();

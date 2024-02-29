@@ -20,14 +20,14 @@ namespace RentItNow.Services
         
         }
 
-        public virtual async Task<IEnumerable<T>> GetAllAsync()
+        public virtual async Task<IEnumerable<T>?> GetAllAsync()
         {
             try
             {
                 var entities = await dbSet.ToListAsync();
-                if (entities.Count == 0)
+                if (entities.Count == 0 || entities == null)
                 {
-                    throw new Exception("Entities not found");
+                    return null;
                 }
                 return entities;
             }
@@ -77,7 +77,7 @@ namespace RentItNow.Services
                 var entity = await dbSet.FindAsync(id);
                 if (entity == null)
                 {
-                    throw new Exception("Entity not found to delete");
+                    return false;
                 }
                 dbSet.Remove(entity);
                 return true;
@@ -110,6 +110,28 @@ namespace RentItNow.Services
         {
             return await dbSet.Where(predicate).ToListAsync();
         }
+
+
+        public async Task<bool> UpdateFieldAsync<TField>(Guid id, string fieldName, TField newFieldValue)
+        {
+            var entityToUpdate = await dbSet.FindAsync(id);
+
+            if (entityToUpdate == null)
+            {
+                return false; // Entity not found
+            }
+
+            // Use reflection to set the new field value
+            var property = entityToUpdate.GetType().GetProperty(fieldName);
+            if (property != null && property.CanWrite && property.PropertyType == typeof(TField))
+            {
+                property.SetValue(entityToUpdate, newFieldValue);
+                return true; // Update successful
+            }
+
+            return false; // Field not found or invalid
+        }
+
 
 
         public virtual bool IsExists(Guid id)

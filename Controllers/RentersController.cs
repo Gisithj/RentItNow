@@ -4,6 +4,7 @@ using RentItNow.configurations;
 using RentItNow.DTOs.Rent;
 using RentItNow.DTOs.Renter;
 using RentItNow.DTOs.User;
+using RentItNow.Helpers;
 using RentItNow.Models;
 namespace RentItNow.Controllers
 {
@@ -13,10 +14,12 @@ namespace RentItNow.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
-        public RentersController(IMapper mapper, IUnitOfWork unitOfWork)
+        private readonly JwtTokenHelper _jwtHelper;
+        public RentersController(IMapper mapper, IUnitOfWork unitOfWork, JwtTokenHelper jwtHelper)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _jwtHelper = jwtHelper;
         }
 
         // GET: api/Renters
@@ -28,7 +31,7 @@ namespace RentItNow.Controllers
                 var renters = await _unitOfWork.Renter.GetAllAsync();
 
 
-                if (renters.Count() == 0)
+                if (renters==null || renters.Count() == 0)
                 {
                     return NotFound("Renters not found");
                 }
@@ -134,7 +137,10 @@ namespace RentItNow.Controllers
                     renter.User = user;
                     var renterCreated = await _unitOfWork.Renter.AddAsync(renter);
                     await _unitOfWork.CompleteAsync();
-                    return CreatedAtAction("GetRenterById", new { renter.RenterId }, renter);
+                    var tokenHandler = _jwtHelper.GenerateJwtToken(renterCreated.RenterId.ToString(), user.Email, 30,"renter");
+
+                    return Ok(tokenHandler);
+                    //return CreatedAtAction("GetRenterById", new { renter.RenterId }, renter);
                 }
                 else
                 {

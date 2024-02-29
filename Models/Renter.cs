@@ -14,7 +14,7 @@ namespace RentItNow.Models
         public ICollection<Item?> Items { get; set; } = new List<Item?>();
 
 
-        public Guid UserId { get; set; }
+        /*public Id UserId { get; set; }*/
         public User User { get; set; } = null!;
 
 
