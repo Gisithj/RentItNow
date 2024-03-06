@@ -14,6 +14,8 @@ using RentItNow.Helpers;
 using RentItNow.Models;
 using System;
 using Microsoft.AspNetCore.Cors;
+using RentItNow.DTOs.Customer;
+using NuGet.Common;
 
 namespace RentItNow.Controllers
 {
@@ -23,14 +25,227 @@ namespace RentItNow.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+       // private readonly ILogger _logger;
+        private readonly IConfiguration _configuration;
         private readonly JwtTokenHelper _jwtHelper;
-        readonly ILogger _logger;
-        public AuthController(IUnitOfWork unitOfWork, IMapper mapper, JwtTokenHelper jwtHelper)
+        private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        public AuthController(
+            IUnitOfWork unitOfWork, 
+            IMapper mapper, 
+            JwtTokenHelper jwtHelper,
+            UserManager<User> userManager,
+            RoleManager<IdentityRole> roleManager,
+            IConfiguration configuration
+            )
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _jwtHelper = jwtHelper;
+            _configuration = configuration;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
+
+        [HttpPost]
+        [Route("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        {
+            var user = await _userManager.FindByNameAsync(loginDto.Username);
+            if (user != null && await _userManager.CheckPasswordAsync(user, loginDto.Password))
+            {
+                var userRoles = await _userManager.GetRolesAsync(user);
+
+                var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    };
+                foreach (var userRole in userRoles)
+                {
+                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                }
+                var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
+                Response.Cookies.Append("token", tokenHandler, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    //SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddHours(1),
+                });
+                return Ok(new
+                {
+                    token = tokenHandler,
+                    expiration = 30
+                });
+                /*foreach (var userRole in userRoles)
+                {
+                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                }
+
+                var token = _jwtHelper.GenerateJwtToken(user.Id,);
+
+                return Ok(new
+                {
+                    token = new JwtSecurityTokenHandler().WriteToken(token),
+                    expiration = token.ValidTo
+                });*/
+            }
+            return Unauthorized();
+        }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // Remove the authentication cookie
+            if (Request.Cookies.ContainsKey("token"))
+            {
+                Response.Cookies.Delete("token");
+            }
+            else
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User not logged in token not found." });
+            }
+
+
+            // Return a response indicating successful logout
+            return Ok(new { message = "Logout successful" });
+        }
+        [HttpGet("auth-check")]
+        public IActionResult CheckAuthentication()
+        {
+            string authorizationHeader = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            {
+                return Unauthorized();
+            }
+
+            string token = authorizationHeader.Substring("Bearer ".Length);
+
+            bool isAuthenticated = _jwtHelper.ValidateJwtToken(token);
+
+            if (isAuthenticated)
+            {
+                return Ok(new { isAuthenticated = true });
+            }
+            else
+            {
+                return Unauthorized(new { isAuthenticated = false });
+            }
+        }
+        /*  [HttpPost]
+          [Route("register-customer")]
+          public async Task<IActionResult> RegisterCustomer([FromBody] CreateCustomerDto createCustomerDto)
+          {
+              var userExists = await _userManager.FindByNameAsync(createCustomerDto.Username);
+              if (userExists != null)
+                  return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User already exists!" });
+
+              IdentityUser user = new()
+              {
+                  Email = model.Email,
+                  SecurityStamp = Guid.NewGuid().ToString(),
+                  UserName = model.Username
+              };
+              var result = await _userManager.CreateAsync(user, model.Password);
+              if (!result.Succeeded)
+                  return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+
+              if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
+                  await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
+              if (!await _roleManager.RoleExistsAsync(UserRoles.User))
+                  await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
+
+              if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
+              {
+                  await _userManager.AddToRoleAsync(user, UserRoles.Admin);
+              }
+              if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
+              {
+                  await _userManager.AddToRoleAsync(user, UserRoles.User);
+              }
+              return Ok(new Response { Status = "Success", Message = "User created successfully!" });
+          }*/
+
+        [HttpPost("register-customer")]
+        public async Task<ActionResult<GetCustomerDto>> PostCustomer(CreateCustomerDto customerDto)
+        {
+            if (_unitOfWork.Customer == null)
+            {
+                return Problem("Entity set 'RentItNowDbContext.Customers'  is null.");
+            }
+            try
+            {
+                var user = _mapper.Map<User>(customerDto);
+
+                var userExists = await _userManager.FindByNameAsync(customerDto.UserName);
+                if (userExists != null)
+                    return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User already exists!" });
+
+                var userCreated = await _unitOfWork.User.CreateUserAsync(user, customerDto.Password);
+
+                if (userCreated.Succeeded)
+                {
+                    if (!await _roleManager.RoleExistsAsync(UserRoles.Customer))
+                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.Customer));
+                    if (!await _roleManager.RoleExistsAsync(UserRoles.User))
+                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
+
+                    if (await _roleManager.RoleExistsAsync(UserRoles.Customer))
+                    {
+                        await _userManager.AddToRoleAsync(user, UserRoles.Customer);
+                    }
+                    if (await _roleManager.RoleExistsAsync(UserRoles.User))
+                    {
+                        await _userManager.AddToRoleAsync(user, UserRoles.User);
+                    }
+                    var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.Role,UserRoles.Customer),
+                        new Claim(ClaimTypes.Role,UserRoles.User),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    };
+
+                    
+                    var customer = _mapper.Map<Customer>(customerDto);
+                    customer.User = user;
+                    var customerCreated = await _unitOfWork.Customer.AddAsync(customer);
+                    await _unitOfWork.CompleteAsync();
+
+                    var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
+                    Response.Cookies.Append("token", tokenHandler, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite=SameSiteMode.None,
+                        //SameSite = SameSiteMode.Strict,
+                        Expires = DateTime.UtcNow.AddHours(1), 
+                    });
+
+                    return Ok(tokenHandler);
+                    //  return CreatedAtAction("GetCustomerById", new { customer.CustomerId }, customer);
+                }
+                else
+                {
+                   return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+                }
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+
+
+
 
         [HttpGet("signin-google")]
         [EnableCors("AllowAnyOrigin")]
