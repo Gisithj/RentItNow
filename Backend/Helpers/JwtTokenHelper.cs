@@ -41,5 +41,55 @@ namespace RentItNow.Helpers
             return token;
           
         }
+        public string GenerateJwtToken(List<Claim> authClaims, int tokenExpirationDays)
+        {
+
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            
+
+            var Sectoken = new JwtSecurityToken(
+                _configuration["JwtSettings:Issuer"],
+               _configuration["JwtSettings:Issuer"],
+                authClaims,
+               expires: DateTime.Now.AddMinutes(tokenExpirationDays),
+               signingCredentials: credentials);
+
+            var token = new JwtSecurityTokenHandler().WriteToken(Sectoken);
+
+            return token;
+
+        }
+
+
+        public bool ValidateJwtToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Key"]);
+
+            try
+            {
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime=true,
+                    ValidIssuer = _configuration["JwtSettings:Issuer"],
+                    ValidAudience = _configuration["JwtSettings:Issuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    // Additional validation parameters as needed
+                }, out var validatedToken);
+
+                // Token is valid
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Token validation failed
+                Console.WriteLine("JWT token validation failed: " + ex.Message);
+                return false;
+            }
+        }
     }
 }

@@ -28,9 +28,9 @@ internal class Program
             options.AddPolicy("AllowAnyOrigin",
                builder =>
                {
-                   builder.AllowAnyHeader()
+                   builder.WithOrigins("https://localhost:44375", "https://localhost:7125", "https://localhost:3000")
+                            .AllowAnyHeader()
                             .AllowAnyMethod()
-                            .WithOrigins("http://localhost:44375", "https://localhost:7125")
                             .AllowCredentials();
                });
 
@@ -45,6 +45,7 @@ internal class Program
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+           // options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         })
         .AddJwtBearer(options =>
@@ -58,6 +59,14 @@ internal class Program
                 ValidIssuer = jwtIssuer,
                 ValidAudience = jwtIssuer,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    context.Token = context.Request.Cookies["token"];
+                    return Task.CompletedTask;
+                }
             };
         })
         .AddGoogle(options =>
@@ -85,13 +94,26 @@ internal class Program
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+
         }
-        app.UseCors();
+        app.UseCors("AllowAnyOrigin");
         app.UseHttpsRedirection();
 
         app.UseAuthentication();
         app.UseAuthorization();
-        
+       /* app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+
+            // Handle OPTIONS requests for all endpoints
+            endpoints.MapMethods("{*url}", new[] { "OPTIONS" }, (context) =>
+            {
+                context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+                return context.Response.WriteAsync("OK");
+            });
+        });*/
         app.MapControllers();
 
         app.Run();

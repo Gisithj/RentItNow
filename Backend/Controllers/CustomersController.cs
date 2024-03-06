@@ -35,7 +35,7 @@ namespace RentItNow.Controllers
         }
 
         // GET: api/Customers
-        [Authorize(Roles ="customer")]
+        [Authorize(Roles = UserRoles.Customer)]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetCustomerDto>>> GetCustomers()
         {
