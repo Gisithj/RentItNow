@@ -14,6 +14,8 @@ namespace RentItNow.Mapping
         public ModelToDtoProfile() {
 
             CreateMap<IdentityUser, User>().ReverseMap();
+            CreateMap<IdentityUser, GetUserDto>().ReverseMap();
+
 
             CreateMap<CreateRenterDto, User>().ReverseMap();
             CreateMap<CreateRenterDto, Renter>().ReverseMap();

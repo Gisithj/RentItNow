@@ -18,6 +18,8 @@ using RentItNow.DTOs.Customer;
 using NuGet.Common;
 using RentItNow.DTOs.Renter;
 using RentItNow.DTOs.Rent;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
+using RentItNow.DTOs.User;
 
 namespace RentItNow.Controllers
 {
@@ -125,7 +127,7 @@ namespace RentItNow.Controllers
 
             string token = authorizationHeader.Substring("Bearer ".Length);
 
-            bool isAuthenticated = _jwtHelper.ValidateJwtToken(token);
+            bool isAuthenticated = _jwtHelper.ValidateJwtToken(token).isAuthenticated;
 
             if (isAuthenticated)
             {
@@ -135,6 +137,36 @@ namespace RentItNow.Controllers
             {
                 return Unauthorized(new { isAuthenticated = false });
             }
+        }
+        [HttpGet("getUser")]
+        public async Task<ActionResult<GetUserDto>> GetUser()
+        {
+            
+
+            // Replace with your token validation logic (using System.IdentityModel.Tokens.Jwt)
+            var token = Request.Cookies["token"];
+
+            var principal = _jwtHelper.ValidateJwtToken(token).validatedToken;
+            if (principal == null)
+            {
+                return Unauthorized("Invalid token");
+            }
+
+            var username = principal.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Name);
+            if (string.IsNullOrEmpty(username?.Value))
+            {
+                return BadRequest("Username not found in token");
+            }
+
+            var user = await _unitOfWork.User.GetUserByUsernameAsync(username.Value);
+            var fetchedUser = _mapper.Map<GetUserDto>(user);
+         
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return Ok(fetchedUser); // Return user data
         }
 
         [HttpPost("register-customer")]

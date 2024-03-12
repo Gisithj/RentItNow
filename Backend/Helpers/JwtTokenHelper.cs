@@ -62,7 +62,7 @@ namespace RentItNow.Helpers
         }
 
 
-        public bool ValidateJwtToken(string token)
+        public (bool isAuthenticated, JwtSecurityToken? validatedToken) ValidateJwtToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Key"]);
@@ -82,13 +82,13 @@ namespace RentItNow.Helpers
                 }, out var validatedToken);
 
                 // Token is valid
-                return true;
+                return (true, (JwtSecurityToken) validatedToken);
             }
             catch (Exception ex)
             {
                 // Token validation failed
                 Console.WriteLine("JWT token validation failed: " + ex.Message);
-                return false;
+                return (false,null);
             }
         }
     }
