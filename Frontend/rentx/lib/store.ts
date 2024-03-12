@@ -44,8 +44,12 @@
 import type { Action, ThunkAction } from "@reduxjs/toolkit";
 import { combineSlices, configureStore } from "@reduxjs/toolkit";
 import {authSlice} from "./features/authSlice";
+import {navbarSlice} from "./features/navbarSlice";
 
-const rootReducer = combineSlices(authSlice);
+const rootReducer = combineSlices(
+    authSlice,
+    navbarSlice
+);
 export type RootState = ReturnType<typeof rootReducer>;
 
 // `makeStore` encapsulates the store configuration to allow

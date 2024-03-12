@@ -3,7 +3,7 @@ import { LOGIN } from '@/api/auth';
 import { login } from '@/lib/features/authSlice';
 import { passowrdError,validatePassword } from '@/utils/validation-helper';
 import { Input } from '@nextui-org/input'
-import { Button } from '@nextui-org/react';
+import { Button, Card, CardBody, Link, Tab, Tabs } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState } from 'react'
 import { VscEye, VscEyeClosed } from 'react-icons/vsc';
@@ -60,34 +60,83 @@ function SignIn() {
             <h1 className='text-2xl font-bold'>Welcome Back</h1>
           </div>
           <form action="" className='flex flex-col gap-4 w-full'>
-          <Input
-            type="text"
-            variant={"bordered"}
-            label="Username"
-            // isInvalid={isInvalidEmail}
-            // color={isInvalidEmail ? "danger" : "default"}
-            // errorMessage={isInvalidEmail && "Please enter a valid Username"}
-            onValueChange={setValueUsername}/>
-          <Input
-            type={isVisible ? "text" : "password"}
-            variant={"bordered"}
-            label="Password"
-            endContent={
-              <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
-                {isVisible ? (
-                  <VscEye className="text-2xl text-default-400 pointer-events-none" />
-                ) : (
-                  <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
-                )}
-              </button>
-            }
-            isInvalid={isInvalidPassword}
-            color={isInvalidPassword ? "danger" : "default"}
-            errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`}
-            onValueChange={setValuePassword}
-            />
-        
-          <Button color='primary' onClick={handleSubmit}>Log in</Button>
+          <Tabs aria-label="Options">
+            <Tab key="customer" title="Customer">
+              <Card className='w-full'>
+                <CardBody className='w-full'>
+                  <Input
+                    type="text"
+                    variant={"bordered"}
+                    label="Username"
+                    // isInvalid={isInvalidEmail}
+                    // color={isInvalidEmail ? "danger" : "default"}
+                    // errorMessage={isInvalidEmail && "Please enter a valid Username"}
+                    onValueChange={setValueUsername}/>
+                  <Input
+                    type={isVisible ? "text" : "password"}
+                    variant={"bordered"}
+                    label="Password"
+                    endContent={
+                      <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
+                        {isVisible ? (
+                          <VscEye className="text-2xl text-default-400 pointer-events-none" />
+                        ) : (
+                          <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
+                        )}
+                      </button>
+                    }
+                    isInvalid={isInvalidPassword}
+                    color={isInvalidPassword ? "danger" : "default"}
+                    errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`}
+                    onValueChange={setValuePassword}
+                    />
+                
+                  <Button color='primary' onClick={handleSubmit}>Log in</Button>
+                  <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
+                        Sign Up
+                  </Button>
+                </CardBody>
+              </Card>  
+            </Tab>
+            <Tab key="renter" title="Renter">
+              <Card>
+                <CardBody>
+                <Input
+              type="text"
+              variant={"bordered"}
+              label="Username"
+              // isInvalid={isInvalidEmail}
+              // color={isInvalidEmail ? "danger" : "default"}
+              // errorMessage={isInvalidEmail && "Please enter a valid Username"}
+              onValueChange={setValueUsername}/>
+            <Input
+              type={isVisible ? "text" : "password"}
+              variant={"bordered"}
+              label="Password"
+              endContent={
+                <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
+                  {isVisible ? (
+                    <VscEye className="text-2xl text-default-400 pointer-events-none" />
+                  ) : (
+                    <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
+                  )}
+                </button>
+              }
+              isInvalid={isInvalidPassword}
+              color={isInvalidPassword ? "danger" : "default"}
+              errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`}
+              onValueChange={setValuePassword}
+              />
+          
+            <Button color='primary' onClick={handleSubmit}>Log in</Button>
+            <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
+                  Sign Up
+            </Button>
+                </CardBody>
+              </Card>  
+            </Tab>           
+          </Tabs>
+           
           </form>
         </div>
       </div>
