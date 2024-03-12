@@ -16,6 +16,8 @@ using System;
 using Microsoft.AspNetCore.Cors;
 using RentItNow.DTOs.Customer;
 using NuGet.Common;
+using RentItNow.DTOs.Renter;
+using RentItNow.DTOs.Rent;
 
 namespace RentItNow.Controllers
 {
@@ -134,39 +136,6 @@ namespace RentItNow.Controllers
                 return Unauthorized(new { isAuthenticated = false });
             }
         }
-        /*  [HttpPost]
-          [Route("register-customer")]
-          public async Task<IActionResult> RegisterCustomer([FromBody] CreateCustomerDto createCustomerDto)
-          {
-              var userExists = await _userManager.FindByNameAsync(createCustomerDto.Username);
-              if (userExists != null)
-                  return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User already exists!" });
-
-              IdentityUser user = new()
-              {
-                  Email = model.Email,
-                  SecurityStamp = Guid.NewGuid().ToString(),
-                  UserName = model.Username
-              };
-              var result = await _userManager.CreateAsync(user, model.Password);
-              if (!result.Succeeded)
-                  return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
-
-              if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
-                  await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
-              if (!await _roleManager.RoleExistsAsync(UserRoles.User))
-                  await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
-
-              if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
-              {
-                  await _userManager.AddToRoleAsync(user, UserRoles.Admin);
-              }
-              if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
-              {
-                  await _userManager.AddToRoleAsync(user, UserRoles.User);
-              }
-              return Ok(new Response { Status = "Success", Message = "User created successfully!" });
-          }*/
 
         [HttpPost("register-customer")]
         public async Task<ActionResult<GetCustomerDto>> PostCustomer(CreateCustomerDto customerDto)
@@ -244,6 +213,85 @@ namespace RentItNow.Controllers
         }
 
 
+        [HttpPost("register-renter")]
+        public async Task<ActionResult<GetRenterDto>> PostRenter(CreateRenterDto renterDto)
+        {
+            
+            if (_unitOfWork.Renter == null)
+            {
+                return Problem("Entity set 'RentItNowDbContext.Renter'  is null.");
+            }
+            try
+            {
+                if (renterDto == null)
+                {
+                    return BadRequest();
+                }
+                var user = _mapper.Map<User>(renterDto);
+
+                var userExists = await _userManager.FindByNameAsync(renterDto.UserName);
+                if (userExists != null)
+                    return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User already exists!" });
+
+                var userCreated = await _unitOfWork.User.CreateUserAsync(user, renterDto.Password);
+
+                if (userCreated.Succeeded)
+                {
+                    if (!await _roleManager.RoleExistsAsync(UserRoles.Renter))
+                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.Renter));
+                    if (!await _roleManager.RoleExistsAsync(UserRoles.User))
+                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
+
+                    if (await _roleManager.RoleExistsAsync(UserRoles.Renter))
+                    {
+                        await _userManager.AddToRoleAsync(user, UserRoles.Renter);
+                    }
+                    if (await _roleManager.RoleExistsAsync(UserRoles.User))
+                    {
+                        await _userManager.AddToRoleAsync(user, UserRoles.User);
+                    }
+                    var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.Role,UserRoles.Renter),
+                        new Claim(ClaimTypes.Role,UserRoles.User),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    };
+
+
+                    var renter = _mapper.Map<Renter>(renterDto);
+                    renter.User = user;
+                    var customerCreated = await _unitOfWork.Renter.AddAsync(renter);
+                    await _unitOfWork.CompleteAsync();
+
+                    var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
+                    Response.Cookies.Append("token", tokenHandler, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.None,
+                        //SameSite = SameSiteMode.Strict,
+                        Expires = DateTime.UtcNow.AddHours(1),
+                    });
+
+                    return Ok(tokenHandler);
+                    //  return CreatedAtAction("GetCustomerById", new { customer.CustomerId }, customer);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "Renter creation failed! Please check user details and try again." });
+                }
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
 
 
 
