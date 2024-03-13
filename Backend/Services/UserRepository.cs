@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RentItNow.Data;
+using RentItNow.Helpers;
 using RentItNow.Models;
 using RentItNow.Repositories;
 using System.Configuration;
@@ -18,7 +19,7 @@ namespace RentItNow.Services
             _signInManager= signInManager;
         }
 
-        public async override Task<IEnumerable<User>> GetAllAsync()
+        public async override Task<IEnumerable<User>?> GetAllAsync()
         {
             try
             {
@@ -67,6 +68,26 @@ namespace RentItNow.Services
                     throw new Exception("User not found");
                 }
                 return user;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+
+        }
+
+        public async Task<IEnumerable<string>> GetRolesByUserAsync(User user)
+        {
+
+            try
+            {
+                var userRoles = await _userManager.GetRolesAsync(user);
+                if (userRoles == null)
+                {
+                    throw new Exception("No roles found");
+                }
+                return userRoles;
             }
             catch (Exception ex)
             {

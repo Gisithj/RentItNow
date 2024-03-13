@@ -8,7 +8,7 @@ namespace RentItNow.Repositories
     {
         public Task<User> GetUserByUsernameAsync(string renterName);
         public Task<User> GetUserByEmailAsync(string email);
-
+        public Task<IEnumerable<string>> GetRolesByUserAsync(User user);
         public Task<IdentityResult> CreateUserAsync(User user,string? password);
         public Task<IdentityResult> CreateUserAsync(User user);
 
