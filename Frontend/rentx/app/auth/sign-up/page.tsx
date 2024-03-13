@@ -2,14 +2,13 @@
 import { REGISTER_CUSTOMER } from '@/api/auth';
 import NavBar from '@/app/components/navbar'
 import { login } from '@/lib/features/authSlice';
+import { useAppDispatch } from '@/lib/hooks';
 import { passowrdError, validateEmail, validatePassword } from '@/utils/validation-helper';
 import { Button, Input, Progress } from '@nextui-org/react'
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState } from 'react'
 import { MdOutlineArrowBackIos, MdOutlineArrowForwardIos } from 'react-icons/md';
 import { VscEye, VscEyeClosed } from 'react-icons/vsc';
-import { useDispatch } from 'react-redux';
-
 function SignUp() {
   const [progressValue, setValueProgressValue] = useState(50); 
   const [currentStep, setCurrentStep] = useState(1); 
@@ -24,7 +23,7 @@ function SignUp() {
   const [valueAddress, setValueAddress] = useState(""); 
   const [valueNIC, setValueNIC] = useState(""); 
   //const [valueHouseNo, setValuePassword] = useState(""); 
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   const router = useRouter()
 
   const isInvalidEmail = useMemo(() => {

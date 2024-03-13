@@ -2,7 +2,6 @@ export  const validateEmail = (value:string) => value.match(/^[A-Z0-9._%+-]+@[A-
 export const validatePassword = (value:string) => {
     // Regex pattern for password validation
     const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!#$%&?@"]).{8,}$/;
-    console.log(passwordRegex.test(value));    
     return passwordRegex.test(value);
   };
 
@@ -20,7 +19,6 @@ export const passowrdError = (valuePassword:string)=>{
     if (valuePassword.length < 8) {
         missingRequirements.push("at least 8 characters");
       }
-    console.log(missingRequirements);
     
     return missingRequirements[0];
 }
