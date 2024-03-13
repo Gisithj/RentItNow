@@ -159,8 +159,10 @@ namespace RentItNow.Controllers
             }
 
             var user = await _unitOfWork.User.GetUserByUsernameAsync(username.Value);
+            var userRoles = await _unitOfWork.User.GetRolesByUserAsync(user);
+
             var fetchedUser = _mapper.Map<GetUserDto>(user);
-         
+            fetchedUser.UserRoles = (ICollection<string>)userRoles;
             if (user == null)
             {
                 return NotFound("User not found");
