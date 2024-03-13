@@ -86,4 +86,14 @@ export const LOGOUT = async ()=> {
     }
   };
 
+  export const GET_USER = async ()=>{
+    try {   
+      const response = await api.get('/Auth/getUser');
+        return response;
+      //return response;
+    } catch (error) {
+        console.log(error);
+    }
+  }
+
   

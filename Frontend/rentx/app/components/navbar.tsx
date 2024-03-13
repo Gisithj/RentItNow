@@ -2,13 +2,14 @@
 import React, { useEffect } from "react";
 import {Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Link, Button, Avatar, PopoverTrigger, Popover, PopoverContent, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Input} from "@nextui-org/react";
 import { ThemeSwitcher } from "./theme-switcher";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { login, logout } from "../../lib/features/authSlice";
 import { useRouter } from "next/navigation";
 import { CHECK_AUTH, LOGOUT } from "@/api/auth";
 import { RootState } from "@/lib/store";
 import { setActiveTab } from "@/lib/features/navbarSlice";
 import { IoMdSearch } from "react-icons/io";
+import { useAppDispatch } from "@/lib/hooks";
 // import {AcmeLogo} from "assets/vercel.svg";
 
 export default function NavBar() {
@@ -22,8 +23,9 @@ export default function NavBar() {
     {label:"How it works",link:"#"},
   ];
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+  const currentUser = useSelector((state: RootState) => state.auth.user);
   const activeNavBar = useSelector((state: RootState) => state.navbar.activeNavBar);
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
 
   const handleLogout = async ()=>{
     
@@ -47,7 +49,9 @@ export default function NavBar() {
       try {
           const responseData = await CHECK_AUTH().then((response)=>{
             
-            if(response?.data.isAuthenticated==true){              
+            if(response?.data.isAuthenticated==true){      
+              console.log("nav bar login dispatch");
+                      
               dispatch(login())  
             }else{
               dispatch(logout())  
@@ -61,7 +65,7 @@ export default function NavBar() {
     
   }, []);
   return (
-    <Navbar onMenuOpenChange={setIsMenuOpen} maxWidth="full" className="px-32">
+    <Navbar onMenuOpenChange={setIsMenuOpen} maxWidth="full" className="px-2 md:px-32">
       <NavbarContent>
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
@@ -144,8 +148,8 @@ export default function NavBar() {
           </DropdownTrigger>
           <DropdownMenu aria-label="Profile Actions" variant="flat">
             <DropdownItem key="profile" className="h-14 gap-2">
-              <p className="font-semibold">Signed in as</p>
-              <p className="font-semibold">zoey@example.com</p>
+              <p className="font-semibold">{currentUser?.userName}</p>
+              <p className="font-light text-xs">{currentUser?.email}</p>
             </DropdownItem>
             <DropdownItem key="settings" onPress={handleSettingsClick}>My Settings</DropdownItem>
             <DropdownItem key="team_settings">Team Settings</DropdownItem>

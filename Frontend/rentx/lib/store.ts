@@ -45,10 +45,12 @@ import type { Action, ThunkAction } from "@reduxjs/toolkit";
 import { combineSlices, configureStore } from "@reduxjs/toolkit";
 import {authSlice} from "./features/authSlice";
 import {navbarSlice} from "./features/navbarSlice";
+import {sidebarSlice} from "./features/sidebarSlice";
 
 const rootReducer = combineSlices(
     authSlice,
-    navbarSlice
+    navbarSlice,
+    sidebarSlice
 );
 export type RootState = ReturnType<typeof rootReducer>;
 

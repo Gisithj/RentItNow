@@ -1,25 +1,26 @@
 'use client'
 import { LOGIN } from '@/api/auth';
 import { login } from '@/lib/features/authSlice';
+import { useAppDispatch } from '@/lib/hooks';
 import { passowrdError,validatePassword } from '@/utils/validation-helper';
 import { Input } from '@nextui-org/input'
 import { Button, Card, CardBody, Link, Tab, Tabs } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState } from 'react'
 import { VscEye, VscEyeClosed } from 'react-icons/vsc';
-import { useDispatch } from 'react-redux';
 
 function SignIn() {
+
+  const [selectedTab, setSelectedTab] = useState(""); 
   const [valueUsername, setValueUsername] = useState("example@gmail.com"); 
   const [valuePassword, setValuePassword] = useState(""); 
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const router = useRouter();
 
 
   const isInvalidPassword = useMemo(() => {
     if (valuePassword === "") return false;
-    console.log(valuePassword);
     return validatePassword(valuePassword) ? false : true;
   }, [valuePassword]);
 
@@ -28,14 +29,12 @@ function SignIn() {
   const toggleVisibility = () => setIsVisible(!isVisible);
 
   const handleSubmit = async()=>{
-    console.log("in the handle submit");
     
       try {
         const loginCredentials = {        
           "username":valueUsername ,
           "password": valuePassword
         }
-        console.log(loginCredentials);
         
         const responseData = await LOGIN(loginCredentials)       
         if( responseData?.status===200){ 
@@ -43,7 +42,13 @@ function SignIn() {
           console.log("in heeeeeeeeeee");
           
           dispatch(login())  
-          router.push("/") 
+          if(selectedTab === "renter"){
+            console.log("in the renter route");
+            router.push("/dashboard/home") 
+          }else{
+            router.push("/") 
+          }
+          
         }       
            
         
@@ -52,7 +57,10 @@ function SignIn() {
         
       }
     }
-
+  const handleTabs = (value:any)=>{
+    setSelectedTab(value)
+    
+  }
   return (
       <div className='flex flex-col items-center gap-10 justify-center'>
         <div className='flex flex-col items-center gap-10 shadow-lg w-fit md:w-2/3 lg:w-1/3 p-20 rounded-2xl'>
@@ -60,7 +68,7 @@ function SignIn() {
             <h1 className='text-2xl font-bold'>Welcome Back</h1>
           </div>
           <form action="" className='flex flex-col gap-4 w-full'>
-          <Tabs aria-label="Options">
+          <Tabs aria-label="Options" onSelectionChange={(e)=>handleTabs(e)}>
             <Tab key="customer" title="Customer">
               <Card className='w-full'>
                 <CardBody className='w-full'>
