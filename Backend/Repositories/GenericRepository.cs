@@ -2,12 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentItNow.Data;
-using RentItNow.Repository;
+using RentItNow.Interfaces;
 using System.Linq.Expressions;
 
-namespace RentItNow.Services
+namespace RentItNow.Repositories
 {
-    public class GenericRepository<T> :IGenericRepository<T> 
+    public class GenericRepository<T> : IGenericRepository<T>
         where T : class
     {
         protected RentItNowDbContext _context;
@@ -17,7 +17,7 @@ namespace RentItNow.Services
         {
             _context = context;
             dbSet = context.Set<T>();
-        
+
         }
 
         public virtual async Task<IEnumerable<T>?> GetAllAsync()

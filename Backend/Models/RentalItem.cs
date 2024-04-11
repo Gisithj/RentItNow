@@ -10,11 +10,11 @@ namespace RentItNow.Models
         public Guid RentalId { get; set; }
         public DateTime RentalStartDate { get; set; }
         public DateTime RentalEndDate { get; set; }
-
         public Guid CustomerId { get; set; }
         public Customer Customer { get; set; } = null!;
-
         public Guid ItemID { get; set; }
         public Item Item { get; set; } = null!;
+        public Guid RenterId { get; set; }
+        public Renter Renter { get; set; } = null!;
     }
 }

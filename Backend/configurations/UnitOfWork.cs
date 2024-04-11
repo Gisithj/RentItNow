@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using RentItNow.Data;
+using RentItNow.Interfaces;
 using RentItNow.Models;
 using RentItNow.Repositories;
-using RentItNow.Repository;
 using RentItNow.Services;
 
 namespace RentItNow.configurations
@@ -12,10 +12,11 @@ namespace RentItNow.configurations
     {
         private readonly RentItNowDbContext _context;
         private readonly IMapper _mapper;
-                public ICustomerRepository Customer { get; set; }
+        public ICustomerRepository Customer { get; set; }
         public IRenterRepository Renter { get; set; }
         public IUserRepository User { get; set; }
         public IItemRepository Item { get; set; }
+        public IRentalItemRepository RentalItem { get; set; }
         public UnitOfWork(RentItNowDbContext context, IMapper mapper, UserManager<User> userManager, SignInManager<User> signInManager)
         {
             _context = context;
@@ -24,6 +25,7 @@ namespace RentItNow.configurations
             Renter = new RenterRepository(context);
             User = new UserRepository(context, userManager,signInManager);
             Item = new ItemRepository(context);
+            RentalItem = new RentalItemRepository(context);
 
         }
         public async Task CompleteAsync()

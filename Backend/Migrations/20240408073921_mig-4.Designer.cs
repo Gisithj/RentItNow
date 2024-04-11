@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RentItNow.Data;
 
@@ -11,9 +12,10 @@ using RentItNow.Data;
 namespace RentItNow.Migrations
 {
     [DbContext(typeof(RentItNowDbContext))]
-    partial class RentItNowDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240408073921_mig-4")]
+    partial class mig4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -223,10 +225,6 @@ namespace RentItNow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ItemOverview")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("RenterId")
                         .HasColumnType("uniqueidentifier");
 
@@ -243,7 +241,7 @@ namespace RentItNow.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ImageURL")
+                    b.Property<string>("Base64Image")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -263,7 +261,7 @@ namespace RentItNow.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FeatureDetail")
+                    b.Property<string>("FeatureDetails")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -503,7 +501,7 @@ namespace RentItNow.Migrations
             modelBuilder.Entity("RentItNow.Models.ItemImage", b =>
                 {
                     b.HasOne("RentItNow.Models.Item", "Item")
-                        .WithMany("ImageURLs")
+                        .WithMany("Images")
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -576,7 +574,7 @@ namespace RentItNow.Migrations
 
             modelBuilder.Entity("RentItNow.Models.Item", b =>
                 {
-                    b.Navigation("ImageURLs");
+                    b.Navigation("Images");
 
                     b.Navigation("RentalItem");
 

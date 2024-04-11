@@ -11,6 +11,7 @@ using RentItNow.Data;
 using RentItNow.DTOs.Customer;
 using RentItNow.DTOs.Item;
 using RentItNow.Models;
+using RentItNow.Services;
 
 namespace RentItNow.Controllers
 {
@@ -20,12 +21,14 @@ namespace RentItNow.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
-
-        public ItemsController(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IRentalItemService _rentalItemService;
+        private readonly IItemService _itemService;
+        public ItemsController(IUnitOfWork unitOfWork, IMapper mapper, IRentalItemService rentalItemService, IItemService itemService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _rentalItemService = rentalItemService;
+            _itemService = itemService;
         }
 
         // GET: api/Items
@@ -58,7 +61,39 @@ namespace RentItNow.Controllers
                 return NotFound(ex.Message);
             }
         }
+        [HttpGet("WithInclude/{id}")]
+        public async Task<ActionResult<ItemDto>> GetItemByIdWithInclude(Guid id)
+        {
+            try
+            {
+                var item = await _itemService.GetItemByIdWithInclude(id);
+                var itemDto = _mapper.Map<ItemDto>(item);
+                return itemDto;
 
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+
+            }
+        }
+        [HttpGet("WithInclude")]
+        public async Task<ActionResult<IEnumerable<ItemDto>>> GetItemsWithInclude()
+        {
+            try
+            {
+                var allitems = await _itemService.GetAllItemsWithInclude();
+                var itemDtos = _mapper.Map<IEnumerable<ItemDto>>(allitems).ToList();
+
+               
+                return itemDtos;
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
         // GET: api/Items/5
         [HttpGet("{id}")]
         public async Task<ActionResult<GetItemDto>> GetItemById(Guid id)
@@ -103,17 +138,14 @@ namespace RentItNow.Controllers
         // POST: api/Items
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Item>> PostItem(CreateItemDto createItemDto)
+        public async Task<ActionResult<CreateItemDto>> PostItem(CreateItemDto createItemDto)
         {
      
             try
             {
                 var item = _mapper.Map<Item>(createItemDto);
-                var itemCreated = await _unitOfWork.Item.AddAsync(item);
-                    await _unitOfWork.CompleteAsync();
-                    return itemCreated;
-
-
+                await _itemService.CreateItem(item);
+                return createItemDto;
 
             }
             catch (Exception ex)
@@ -121,21 +153,6 @@ namespace RentItNow.Controllers
 
                 return NotFound(ex.Message);
             }
-  /*          try
-            {
-                if(!_unitOfWork.Renter.IsExists(createItemDto.RenterId)) {
-                    return NotFound("Renter not found ");
-                }
-                var item = _mapper.Map<Item>(createItemDto);
-                var itemCreated = await _unitOfWork.Item.AddAsync(item);
-                await _unitOfWork.CompleteAsync();
-                return CreatedAtAction(nameof(GetItemById), new { itemCreated.ItemId }, itemCreated);
-
-            }
-            catch (Exception ex)
-            {
-                return NotFound(ex.Message);
-            }*/
         }
 
         // DELETE: api/Items/5
@@ -144,8 +161,7 @@ namespace RentItNow.Controllers
         {    
             try
             {
-                await _unitOfWork.Item.DeleteAsync(id);
-                await _unitOfWork.CompleteAsync();
+                await _itemService.DeleteItem(id);
                 return Ok("Item deleted");
             }
             catch (Exception ex)
@@ -160,15 +176,10 @@ namespace RentItNow.Controllers
         {
             try
             {
-                if(_unitOfWork.Item.IsExists(rentItemDto.ItemID) && _unitOfWork.Customer.IsExists(rentItemDto.CustomerId)){
-                    await _unitOfWork.Item.UpdateFieldAsync(rentItemDto.ItemID, "IsRented", true);
-                    await _unitOfWork.CompleteAsync();
-                    return rentItemDto;
-                }
-                else
-                {
-                    return NotFound();
-                }
+                RentalItem rentalItem = _mapper.Map<RentItemDto, RentalItem>(rentItemDto);
+                await _rentalItemService.RentItemAsync(rentalItem);
+                return rentItemDto;
+       
 
             }
             catch (Exception ex)

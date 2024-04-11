@@ -1,5 +1,4 @@
-﻿using RentItNow.Repositories;
-using RentItNow.Repository;
+﻿using RentItNow.Interfaces;
 
 namespace RentItNow.configurations
 {
@@ -9,6 +8,7 @@ namespace RentItNow.configurations
         IRenterRepository Renter { get; set; }
         IUserRepository User { get; set; }
         IItemRepository Item { get; set; }
+        IRentalItemRepository RentalItem { get; set; }
         Task CompleteAsync();
         void Dispose();
     }
