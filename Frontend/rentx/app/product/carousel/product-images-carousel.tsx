@@ -4,7 +4,11 @@ import { Thumb } from './product-carousel-thumb'
 import { Image } from '@nextui-org/react'
 import { NextButton, PrevButton, usePrevNextButtons } from './product-carousel-arrows'
 
-function ProductCarousel() {
+interface ProductCarouselProps {
+    images: string[]
+}
+function ProductCarousel({images}: ProductCarouselProps) {
+
     const imgList = ["img","img","img","img","img"]
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [emblaMainRef, emblaMainApi] = useEmblaCarousel()
@@ -12,7 +16,7 @@ function ProductCarousel() {
       containScroll: 'keepSnaps',
       dragFree: true,
     })
-  
+    
     const onThumbClick = useCallback(
       (index:any) => {
         if (!emblaMainApi || !emblaThumbsApi) return
@@ -57,9 +61,9 @@ function ProductCarousel() {
     <div className="embla flex flex-col gap-4">
     <div className="embla__viewport overflow-hidden" ref={emblaMainRef}>
       <div className="embla__container flex">
-        {imgList.map((img,index) => (
-          <div className="embla__slide flex-shrink-0 flex-grow-0 w-full min-w-0" key={index}>
-            <Image src='/assets/images/1.jpg' alt='product'/>
+        {images.map((img,index) => (
+          <div className="embla__slide max-h-[400px] flex-shrink-0 flex-grow-0 w-full min-w-0 flex justify-center" key={index}>
+            <Image src={img} alt='product' className='max-h-[400px]'/>
           </div>
         ))}
       </div>
@@ -67,13 +71,14 @@ function ProductCarousel() {
 
     <div className="embla-thumbs ">
       <div className="embla-thumbs__viewport overflow-hidden" ref={emblaThumbsRef}>
-        <div className="embla-thumbs__container flex flex-row gap-2">
-          {imgList.map((img,index) => (
+        <div className="embla-thumbs__container flex flex-row gap-2 justify-center">
+          {images.map((img,index) => (
             <Thumb
               key={index}
               onClick={() =>{ onThumbClick(index)}}
               selected={index === selectedIndex}
               index={index}
+              src={img || '/assets/images/1.jpg'}
             />
           ))}
         </div>

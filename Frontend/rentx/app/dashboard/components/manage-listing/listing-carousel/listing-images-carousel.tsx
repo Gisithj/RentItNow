@@ -80,7 +80,7 @@ function ListingCarousel({imageList,handleFileChange,removeImage}:ListingCarouse
     <div className="embla-thumbs ">
       <div className="embla-thumbs__viewport overflow-hidden " ref={emblaThumbsRef}>
         <div className="embla-thumbs__container flex flex-row gap-2 mt-4">
-        <div className='flex-none w-[20%] min-w-0 cursor-pointer bg-default items-center justify-center rounded-[14px]'>
+        <div className='flex-none w-[20%] min-w-0 min-h-24 cursor-pointer bg-default items-center justify-center rounded-[14px]'>
             <label htmlFor="file-input" className="flex w-full h-full items-center justify-center cursor-pointer">
               <FiPlus fontSize={25}/>
             </label>

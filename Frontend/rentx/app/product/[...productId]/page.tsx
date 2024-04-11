@@ -1,169 +1,343 @@
 "use client";
 import { useRouter, useParams } from "next/navigation";
 import ProductCarousel from "../carousel/product-images-carousel";
-import { Button, Link, Select, SelectItem, Spacer, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@nextui-org/react";
+import { Button, Input, Link, Select, SelectItem, Skeleton, Spacer, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@nextui-org/react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
+import DateTimePicker from "@/app/components/ui/datetimepicker";
+import { connection, sendRentalRequestToRenter, startConnection } from "@/utils/signalrService";
+import { GET_ITEM_BY_ID_WITH_INCLUDE } from "@/api/item";
+import { ChangeEvent, useEffect, useState } from "react";
+import { Item, Renter } from "@/utils/interfaces";
+import { GET_RENTER_BY_ID } from "@/api/renter";
+import { set, setHours } from "date-fns";
 
 const ProductPage = ({ params }: { params: { productId: string } }) => {
-  const router = useRouter();
+
   const { productId } = useParams();
+
+  //redux states
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
-  const rentOptions = [
-    {
-      label: "Rent per hour",
-      value: "r1",
-      description: "The second most popular pet in the world",
-    },
-    {
-      label: "Rent per day",
-      value: "r2",
-      description: "The most popular pet in the world",
-    },
-    {
-      label: "Rent per week",
-      value: "r3",
-      description: "The most popular pet in the world",
-    },
-    {
-      label: "Rent per month",
-      value: "r4",
-      description: "The most popular pet in the world",
-    },
-  ];
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  //local states
+  const [item, setItem] = useState<Item>();
+  const [renterDetails, setRenterDetails] = useState<Renter>();
+  const [selectedRentalOption, setSelectedRentalOption] = useState<string>(item?.rentalOptions[0].rentalOptionName||"");
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [hoursCount, setHoursCount] = useState("1");
+  const [rentalDurationErrorMessage, setRentalDurationErrorMessage] = useState("");
+  const [isDurationError, setIsDurationError] = useState(false);
+  let firstHalf: any[] = [];
+  let secondHalf: any[]  = [];
+
+  const today = new Date();
+  //handle date selection
+  const handleStartDateChange = (date: Date) => {    
+    
+    if(date<today){
+     handleDurationErrorMessage("Please select a valid date") 
+    }
+    setStartDate(date);
+  };
+  const handleEndDateChange = (date: Date) => {
+    if(date<today){
+      handleDurationErrorMessage("Please select a valid date") 
+    }
+    setEndDate(date);
+  };
+
+  const handleHours = (e: ChangeEvent<HTMLInputElement>) =>{
+    console.log("in the hours count handle");    
+    setHoursCount(e.target.value)
+    calculateRental
+  }
+  //get the renter details
+  const getRenterDetails = ()=>{
+    item  && !renterDetails &&
+    GET_RENTER_BY_ID(item!.renterId).then((response) => {
+        setRenterDetails(response);
+        
+    }).catch((error) => {
+      console.error(error);
+    });
+  }
+  
+  //handle duration error message state
+  const handleIsDurationError = () => {
+    setIsDurationError(!isDurationError);
+  }
+
+  //handle duration error message
+  const handleDurationErrorMessage = (message: string) => {
+    setRentalDurationErrorMessage(message);
+    setIsDurationError(true);
+  }
+  //create specification arrays
+  if(item != null || undefined){
+    var middleIndex = Math.ceil(item!.specifications.length / 2);
+     firstHalf = item!.specifications.slice(0, middleIndex);
+     secondHalf = item!.specifications.slice(middleIndex);
+  }
+
+  //handle click rent now
   const handleRentNowClick = () =>{
+    console.log(connection);
+    
+    // startConnection();
+    sendRentalRequestToRenter(productId,user?.roleId);
     if(isLoggedIn){
       console.log("logged in");      
     }else{
       console.log("not logged in")
     }
+  } 
+  
+  const getDays = (endDate: Date, startDate: Date) => {
+    return Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   }
-  // Render product details
+
+  //calculate rental
+  const calculateRental = () => {
+    console.log("in the calculateRental");
+    console.log(selectedRentalOption.toLowerCase());
+    if(!item) return 0;
+    if(selectedRentalOption.toLowerCase() !== "rent per hour"){
+      if(!startDate || !endDate) return 0;
+      if(startDate > endDate) return 0;
+    }
+    
+
+    if(selectedRentalOption.toLowerCase() === "rent per hour"){
+      console.log("in the hours");
+      
+      if(parseInt(hoursCount)>24){
+        if(!isDurationError){
+        handleDurationErrorMessage("Duration cannot be more than 24 hours on hourly rental option");
+        }
+        return;
+      }else{   
+        if(isDurationError){ 
+        handleIsDurationError();
+        }
+        return "Rs."+(item.rentalOptions.find((option) => option.rentalOptionName.toLowerCase() === selectedRentalOption.toLowerCase())?.price! * parseInt(hoursCount)).toFixed(2);
+      }
+      
+    }else if(selectedRentalOption.toLowerCase()==="rent per day"){
+      if(getDays(endDate!,startDate!) > 7){
+        if(!isDurationError){
+          handleDurationErrorMessage("Duration cannot be more than 7 days on daily rental option");
+        }
+        return;
+      }else{
+        if(isDurationError){
+          handleIsDurationError();
+        }
+        const noOfDays = getDays(endDate!,startDate!);
+        return "Rs."+(item.rentalOptions.find((option) => option.rentalOptionName.toLowerCase() === selectedRentalOption.toLowerCase())?.price! * noOfDays).toFixed(2);
+      }
+    }else if(selectedRentalOption.toLowerCase()==="rent per week"){
+      if(getDays(endDate!,startDate!) < 7){
+        if(!isDurationError){
+          handleDurationErrorMessage("Duration cannot be less than 7 days on weekly rental option");
+        }
+        return;
+      }else{
+        if(isDurationError){
+          handleIsDurationError();
+        }
+        const noOfWeeks = getDays(endDate!,startDate!)/7;
+        return "Rs."+(item.rentalOptions.find((option) => option.rentalOptionName.toLowerCase() === selectedRentalOption.toLowerCase())?.price! * noOfWeeks).toFixed(2);
+      }
+     
+    }else if(selectedRentalOption.toLowerCase()==="rent per month"){
+      if(getDays(endDate!,startDate!) < 30){
+        if(!isDurationError){
+          handleDurationErrorMessage("Duration cannot be less than 30 days on monthly rental option");
+        }
+        return;
+      }else{
+        if(isDurationError){
+          handleIsDurationError();
+        }
+        const noOfMonth = getDays(endDate!,startDate!)/30;      
+      return "Rs."+(item.rentalOptions.find((option) => option.rentalOptionName.toLowerCase() === selectedRentalOption.toLowerCase())?.price! * noOfMonth).toFixed(2);
+      }
+      
+    }
+   
+  };
+
+  //handle rental option change
+  const onRentalOptionChange = (e:any) =>{
+    setSelectedRentalOption(e.target.value);  
+  }
+
+
+  useEffect(() => {
+    if(!item){
+      GET_ITEM_BY_ID_WITH_INCLUDE(productId as string).then((response) => {
+        setItem(response);
+        setSelectedRentalOption(response.rentalOptions[0].rentalOptionName)
+        getRenterDetails();
+      }).catch((error) => {
+        console.error(error);
+      });
+     
+    }
+    
+  }, []);
+
   return (
-    <div className="px-4 md:px-20 lg:px-44 py-4 md:py-10">
-      <div className="flex flex-col gap-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <div className="w-full">
-            <ProductCarousel />
-          </div>
-          <div className="flex flex-col gap-2 items-start">
-            <h1 className="text-4xl font-bold">Angle Grinder</h1>
-            <User
-              name="Rent House"
-              description={
-                <Link href="https://twitter.com/jrgarciadev" size="sm" isExternal>
-                  @RentHouse
-                </Link>
+      <div className="px-4 md:px-20 lg:px-44 py-4 md:py-10">
+        <div className="flex flex-col gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="w-full">
+              {item && <ProductCarousel images={item!.imageURLs}/>}
+            </div>
+            <div className="flex flex-col gap-2 items-start">
+              <h1 className="text-4xl font-bold">{item?.itemName}</h1>
+              <h1 className="text-4xl font-bold">{renterDetails && renterDetails?.renterName}</h1>
+              {renterDetails && <User
+                name={renterDetails?.renterName}
+                description={
+                  <Link href="https://twitter.com/jrgarciadev" size="sm" isExternal>
+                    @{renterDetails && renterDetails?.renterName}
+                  </Link>
+                }
+                avatarProps={{
+                  size: "sm",
+                  src: "https://avatars.githubusercontent.com/u/30373425?v=4",
+                }}
+              />
               }
-              avatarProps={{
-                size: "sm",
-                src: "https://avatars.githubusercontent.com/u/30373425?v=4",
-              }}
-            />
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2">
-                <div>
-                  <ul>
-                    <li>Model</li>
-                    <li>Make</li>
-                  </ul>
-                </div>
-                <div>
-                  <ul>
-                    <li>Inco</li>
-                    <li>2018</li>
-                  </ul>
-                </div>
-              </div>
-              <p>
-                n angle grinder, also known as a disc grinder or side grinder, is
-                a handheld power tool used for cutting, grinding, and polishing
-                various materials such as metal, ceramic, and masonry. Here are
-                some key points about angle grinders
-              </p>
-              <Select
-                size="sm"
-                label="Select a rent option"
-                className="max-w-xs"
-                selectionMode="single"
-              >
-                {rentOptions.map((rentOption) => (
-                  <SelectItem key={rentOption.value} value={rentOption.value}>
-                    {rentOption.label}
+              <div className="flex flex-col gap-4">
+                {/* <div className="grid grid-cols-2">
+                  <div>
+                    <ul>
+                      <li>Model</li>
+                      <li>Make</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <ul>
+                      <li>Inco</li>
+                      <li>2018</li>
+                    </ul>
+                  </div>
+                </div> */}
+                <p>
+                  {item?.itemDescription}
+                </p>
+                {item && 
+                <Select
+                  size="sm"
+                  label="Select a rent option"
+                  className="max-w-xs"
+                  selectionMode="single"
+                  defaultSelectedKeys={["Rent per hour"]}
+                  onChange={onRentalOptionChange}
+                >
+                   {item.rentalOptions.map((rentOption) => (
+                  <SelectItem key={rentOption.rentalOptionName} value={rentOption.rentalOptionName} >
+                    {rentOption.rentalOptionName}
                   </SelectItem>
                 ))}
-              </Select>
-              <span className="text-2xl font-bold">Rs.3000.00</span>
-              <Button onPress={handleRentNowClick}>Rent Now</Button>
+
+                </Select>
+                  }
+                {selectedRentalOption.toLowerCase()==="rent per hour"?
+                  <div>
+                      <Input 
+                        type="email" 
+                        label="No of hours"
+                        placeholder="Enter no of hours"
+                        value={hoursCount}
+                        onChange={(e)=>handleHours(e)} 
+                        />
+                  </div>
+                  :
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div>
+                      <h1 className="text-sm">From</h1>
+                      <DateTimePicker onDateChange={handleStartDateChange}/>
+                    </div>
+                    <div>
+                      <h1 className="text-sm">To</h1>
+                      <DateTimePicker onDateChange={handleEndDateChange}/>
+                    </div>
+                  </div>
+                }
+                {isDurationError && 
+                  <span className="text-sm font-normal text-danger-500">{rentalDurationErrorMessage}</span>
+                }
+                <span className="text-2xl font-bold">{calculateRental()}</span>
+                <Button onPress={handleRentNowClick}>Rent Now</Button>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          <span className="text-2xl font-bold">Product overview</span>
-          <p>
-          Delivers up to 28 minutes of run time at mid-speed (15,800 RPM) using two 5.0Ah batteries.
-        Zero emissions and reduced maintenance; no need for gas or oil
-        Delivers up to 28-minutes of run time at mid-speed (15,800 RPM) using two 5.0 Ah batteries
-        6-stage air velocity/volume selection dial with variable speed control trigger
-        Delivers up to 120 MPH air velocity and 473 CFM of air volume
-        Sound pressure rating of 61 dB(A); measured per ANSI B 175.2 standard
-          </p>
-        </div>
-        <div className="flex flex-col gap-4">
-          <span className="text-2xl font-bold">Product Specifications</span>
-          <div className="grid grid-cols-1 lg:grid-cols-2">
-            <Table isStriped hideHeader aria-label="Example static collection table" className='w-full'>
-                            <TableHeader>
-                                <TableColumn>Feature</TableColumn>
-                                <TableColumn>Value</TableColumn>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow key="1" className='border-b-slate-800'>
-                                    <TableCell>Color</TableCell>
-                                    <TableCell className='text-end'>Teal</TableCell>
-                                </TableRow>
-                                <TableRow key="2">
+          <div className="flex flex-col gap-4">
+            <span className="text-2xl font-bold">Product overview</span>
+            <p>
+            {item?.itemOverview}
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            <span className="text-2xl font-bold">Product Specifications</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              <Table isStriped hideHeader aria-label="Example static collection table" className='w-full'>
+                              <TableHeader>
+                                  <TableColumn>Feature</TableColumn>
+                                  <TableColumn>Value</TableColumn>
+                              </TableHeader>
+                              <TableBody>
+                                  {
+                                    item?
+                                    firstHalf.map((specification,index) => (
+
+                                      <TableRow key={index} className='border-b-slate-800'>
+                                        <TableCell>{specification.specificationFeature}</TableCell>
+                                        <TableCell className='text-end'>{specification.featureDetail}</TableCell>
+                                      </TableRow>
+                                    ))
+                                    :
+                                    <TableRow key="2">
                                     <TableCell>Maximum air speed (mph)</TableCell>
                                     <TableCell className='text-end'>120</TableCell>
                                 </TableRow>
-                                <TableRow key="3">
-                                    <TableCell>Noise Level (dB)</TableCell>
-                                    <TableCell className='text-end'>61</TableCell>
+                                  }
+                                
+                              </TableBody>
+              </Table>
+              <Table isStriped hideHeader aria-label="Example static collection table" className='w-full'>
+                              <TableHeader>
+                                  <TableColumn>NAME</TableColumn>
+                                  <TableColumn>ROLE</TableColumn>
+                              </TableHeader>
+                              <TableBody>
+                              {
+                                    item && secondHalf.length>0?
+                                    secondHalf.map((specification,index) => (
+
+                                      <TableRow key={index} className='border-b-slate-800'>
+                                        <TableCell>{specification.specificationFeature}</TableCell>
+                                        <TableCell className='text-end'>{specification.featureDetail}</TableCell>
+                                      </TableRow>
+                                    ))
+                                    :
+                                    <TableRow key="2">
+                                    <TableCell>Maximum air speed (mph)</TableCell>
+                                    <TableCell className='text-end'>120</TableCell>
                                 </TableRow>
-                                <TableRow key="4">
-                                    <TableCell>Weight (lb.)</TableCell>
-                                    <TableCell className='text-end'>25</TableCell>
-                                </TableRow>
-                            </TableBody>
-            </Table>
-            <Table isStriped hideHeader aria-label="Example static collection table" className='w-full'>
-                            <TableHeader>
-                                <TableColumn>NAME</TableColumn>
-                                <TableColumn>ROLE</TableColumn>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow key="1" className='border-b-slate-800'>
-                                    <TableCell>Features</TableCell>
-                                    <TableCell className='text-end'>Battery Powered</TableCell>
-                                </TableRow>
-                                <TableRow key="2">
-                                    <TableCell>Maximum Air Volume (CFM)</TableCell>
-                                    <TableCell className='text-end'>473</TableCell>
-                                </TableRow>
-                                <TableRow key="3">
-                                    <TableCell>Noise rating (dB)</TableCell>
-                                    <TableCell className='text-end'>61</TableCell>
-                                </TableRow>
-                                <TableRow key="4">
-                                    <TableCell>Email</TableCell>
-                                    <TableCell className='text-end'>gisithj@gmail.com</TableCell>
-                                </TableRow>
-                            </TableBody>
-            </Table>
+                                  }
+                              </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
-      </div>
     </div>
+    
   );
 };
 

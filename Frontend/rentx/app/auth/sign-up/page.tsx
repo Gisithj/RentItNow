@@ -3,6 +3,7 @@ import { REGISTER_CUSTOMER } from '@/api/auth';
 import NavBar from '@/app/components/navbar'
 import { login } from '@/lib/features/authSlice';
 import { useAppDispatch } from '@/lib/hooks';
+import { startConnection } from '@/utils/signalrService';
 import { passowrdError, validateEmail, validatePassword } from '@/utils/validation-helper';
 import { Button, Input, Progress } from '@nextui-org/react'
 import { useRouter } from 'next/navigation';
@@ -82,6 +83,7 @@ function SignUp() {
         const responseData = await REGISTER_CUSTOMER(newCustomer)
         if( responseData?.status===200){ 
           dispatch(login())  
+          startConnection();
           router.push("/") 
         } 
         

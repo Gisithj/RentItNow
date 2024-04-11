@@ -10,9 +10,11 @@ import { RootState } from "@/lib/store";
 import { setActiveTab } from "@/lib/features/navbarSlice";
 import { IoMdSearch } from "react-icons/io";
 import { useAppDispatch } from "@/lib/hooks";
+import { stopConnection } from "@/utils/signalrService";
 // import {AcmeLogo} from "assets/vercel.svg";
 
 export default function NavBar() {
+  
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const router = useRouter()
 
@@ -28,7 +30,7 @@ export default function NavBar() {
   const dispatch = useAppDispatch()
 
   const handleLogout = async ()=>{
-    
+    stopConnection();
     const responseData = await LOGOUT()
     if( responseData?.status===200){
       dispatch(logout())
@@ -36,6 +38,7 @@ export default function NavBar() {
       router.push("/auth/sign-in")
     }
   }
+
   const handleSettingsClick = async ()=>{
     router.push("/profile-settings")
   }
@@ -45,14 +48,15 @@ export default function NavBar() {
   }
 
   useEffect(() => {
-    const checkAuth = async () => {      
+    const checkAuth = async () => {   
       try {
           const responseData = await CHECK_AUTH().then((response)=>{
             
             if(response?.data.isAuthenticated==true){      
-              console.log("nav bar login dispatch");
-                      
-              dispatch(login())  
+              if(!isLoggedIn){
+                dispatch(login())  
+              }        
+              // dispatch(login())  
             }else{
               dispatch(logout())  
             }
@@ -63,7 +67,7 @@ export default function NavBar() {
     };
     checkAuth();    
     
-  }, []);
+  }, [isLoggedIn]);
   return (
     <Navbar onMenuOpenChange={setIsMenuOpen} maxWidth="full" className="px-2 md:px-32">
       <NavbarContent>
@@ -207,3 +211,5 @@ export default function NavBar() {
     </Navbar>
   );
 }
+
+

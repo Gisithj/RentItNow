@@ -1,16 +1,16 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import Sidebar from '../components/sidebar'
-import ItemListings from '../components/manage-listings'
-import RentalRequests from '../components/rental-requests'
-import ManageListings from '../components/manage-listings'
+import ItemListings from '../components/manage-listing/manage-listings'
+import RentalRequests from '../components/rental-request/rental-requests'
+import ManageListings from '../components/manage-listing/manage-listings'
 import Settings from '../components/settings'
 import { useParams,useRouter } from 'next/navigation'
 import { RootState } from '@/lib/store'
 import { useSelector } from 'react-redux'
 //import { useRouter } from 'next/router'
 import Home from '../components/home'
-import NewListing from '../components/new-listing'
+import NewListing from '../components/manage-listing/new-listing'
 
 function Dashboard({ params }: { params: { tab: string } }) {
   const { tab } = useParams();

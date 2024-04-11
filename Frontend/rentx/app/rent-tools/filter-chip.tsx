@@ -38,7 +38,7 @@ export const FilterChip = ({value, handleFilterClick}:FilterChipPros) => {
     getLabelProps,
     getInputProps,
   } = useCheckbox({});
-  console.log("isslected",isSelected);
+  // console.log("isslected",isSelected);
   
   const styles = checkbox({ isSelected, isFocusVisible });
   const handleChipClick = () => {

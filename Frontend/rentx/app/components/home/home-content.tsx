@@ -6,7 +6,7 @@ import PopularCategories from './popular/popular-categories';
 import LatestListings from './latest/latest-listings';
 
 
-function HomeContent() {
+function HomeContent() {  
   return (
     <div className='px-4 md:px-20 lg:px-44 py-4 md:py-10 flex flex-col gap-10'>      
       <HeroCarousel/>

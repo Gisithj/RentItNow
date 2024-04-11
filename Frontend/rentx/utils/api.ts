@@ -2,8 +2,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://localhost:44375/api',
-  timeout: 5000, 
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+  timeout: 30000, 
   withCredentials:true
 });
 // axios.defaults.withCredentials = true
