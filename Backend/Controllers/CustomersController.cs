@@ -172,6 +172,21 @@ namespace RentItNow.Controllers
         }
 
 
+        [HttpGet("/RentedItems")]
+        public async Task<ActionResult<Customer>> GetCustomerRentedItems(Guid id)
+        {
+            try
+            {
+                var customer = await _unitOfWork.Customer.GetCustomerWithRentedItems(id);
+                return customer;
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+
 
     }
 }

@@ -6,7 +6,10 @@ namespace RentItNow.DTOs.Item
     {
         public string ItemName { get; set; } = string.Empty;
         public string ItemDescription { get; set; } = string.Empty;
-        public int RentalPrice { get; set; }
+        public string ItemOverview { get; set; } = string.Empty;
+        public List<RentalOptionDto> RentalOptions { get; set; } = null!;
+        public List<ItemSpecDto> Specifications { get; set; } = null!;
+        public List<string> Images { get; set; } = null!;
         public Boolean IsRented { get; set; }
         public Guid RenterId { get; set; }
     }

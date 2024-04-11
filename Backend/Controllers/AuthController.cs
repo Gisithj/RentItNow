@@ -59,12 +59,20 @@ namespace RentItNow.Controllers
             if (user != null && await _userManager.CheckPasswordAsync(user, loginDto.Password))
             {
                 var userRoles = await _userManager.GetRolesAsync(user);
-
                 var authClaims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.UserName),
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     };
+
+                if (userRoles.Contains(UserRoles.Renter))
+                {
+                    authClaims.Add(new Claim("renterId", _unitOfWork.Renter.GetRenterByUserIdAsync(user.Id).Result.RenterId.ToString()));
+                }else if (userRoles.Contains(UserRoles.Customer))
+                {
+                    authClaims.Add(new Claim("customerId", _unitOfWork.Customer.GetCustomerByUserIdAsync(user.Id).Result.CustomerId.ToString()));
+                }
+                
                 foreach (var userRole in userRoles)
                 {
                     authClaims.Add(new Claim(ClaimTypes.Role, userRole));
@@ -146,7 +154,7 @@ namespace RentItNow.Controllers
             // Replace with your token validation logic (using System.IdentityModel.Tokens.Jwt)
             var token = Request.Cookies["token"];
 
-            var principal = _jwtHelper.ValidateJwtToken(token).validatedToken;
+            var principal = _jwtHelper.ValidateJwtToken(token!).validatedToken;
             if (principal == null)
             {
                 return Unauthorized("Invalid token");
@@ -160,14 +168,27 @@ namespace RentItNow.Controllers
 
             var user = await _unitOfWork.User.GetUserByUsernameAsync(username.Value);
             var userRoles = await _unitOfWork.User.GetRolesByUserAsync(user);
-
+            string userId = string.Empty;
+            foreach (var role in userRoles) {
+                if (role.ToLower() == "renter")
+                {
+                    userId = _unitOfWork.Renter.GetRenterByUserIdAsync(user.Id).Result.RenterId.ToString();
+                }
+                else if(role.ToLower() ==   "customer")
+                {
+                    userId = _unitOfWork.Customer.GetCustomerByUserIdAsync(user.Id).Result.CustomerId.ToString();
+                }
+            }
             var fetchedUser = _mapper.Map<GetUserDto>(user);
             fetchedUser.UserRoles = (ICollection<string>)userRoles;
+            
+            fetchedUser.roleId = userId;
             if (user == null)
             {
                 return NotFound("User not found");
             }
 
+            
             return Ok(fetchedUser); // Return user data
         }
 
@@ -203,20 +224,20 @@ namespace RentItNow.Controllers
                     {
                         await _userManager.AddToRoleAsync(user, UserRoles.User);
                     }
-                    var authClaims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, user.UserName),
-                        new Claim(ClaimTypes.Role,UserRoles.Customer),
-                        new Claim(ClaimTypes.Role,UserRoles.User),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    };
-
-                    
+                                       
                     var customer = _mapper.Map<Customer>(customerDto);
                     customer.User = user;
                     var customerCreated = await _unitOfWork.Customer.AddAsync(customer);
                     await _unitOfWork.CompleteAsync();
 
+                    var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim("customerId",customerCreated.CustomerId.ToString()),
+                        new Claim(ClaimTypes.Role,UserRoles.Customer),
+                        new Claim(ClaimTypes.Role,UserRoles.User),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    };
                     var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
                     Response.Cookies.Append("token", tokenHandler, new CookieOptions
                     {
@@ -284,20 +305,21 @@ namespace RentItNow.Controllers
                     {
                         await _userManager.AddToRoleAsync(user, UserRoles.User);
                     }
+                   
+
+                    var renter = _mapper.Map<Renter>(renterDto);
+                    renter.User = user;
+                    var renterCreated = await _unitOfWork.Renter.AddAsync(renter);
+                    await _unitOfWork.CompleteAsync();
+
                     var authClaims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim("renterId",renterCreated.RenterId.ToString()),
                         new Claim(ClaimTypes.Role,UserRoles.Renter),
                         new Claim(ClaimTypes.Role,UserRoles.User),
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     };
-
-
-                    var renter = _mapper.Map<Renter>(renterDto);
-                    renter.User = user;
-                    var customerCreated = await _unitOfWork.Renter.AddAsync(renter);
-                    await _unitOfWork.CompleteAsync();
-
                     var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
                     Response.Cookies.Append("token", tokenHandler, new CookieOptions
                     {

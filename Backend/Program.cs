@@ -7,6 +7,8 @@ using RentItNow.configurations;
 using RentItNow.Data;
 using RentItNow.Helpers;
 using RentItNow.Models;
+using RentItNow.Services;
+using RentItNow.websocket;
 using System.Reflection.Emit;
 using System.Text;
 
@@ -81,11 +83,14 @@ internal class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
+        builder.Services.AddSignalR();
         builder.Services.AddScoped<UserManager<User>>();
         builder.Services.AddScoped<SignInManager<User>>();
         builder.Services.AddScoped<IUserClaimsPrincipalFactory<User>, UserClaimsPrincipalFactory<User, IdentityRole>>();
-        builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
+        
+        builder.Services.AddScoped<IRentalItemService,RentalItemService>();
+        builder.Services.AddScoped<IItemService, ItemService>();
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
         builder.Services.AddScoped<JwtTokenHelper>();
         var app = builder.Build();
 
@@ -98,7 +103,7 @@ internal class Program
         }
         app.UseCors("AllowAnyOrigin");
         app.UseHttpsRedirection();
-
+        app.MapHub<RentalRequestHub>("/chat");
         app.UseAuthentication();
         app.UseAuthorization();
        /* app.UseEndpoints(endpoints =>

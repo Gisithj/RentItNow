@@ -77,7 +77,7 @@ namespace RentItNow.Controllers
         }
 
         // GET: api/Renters/GenRenterById/5
-        [HttpGet("GenRenterById")]
+        [HttpGet("GetRenterById/{id}")]
         public async Task<ActionResult<GetRenterDto>> GetRenterById(Guid id)
         {
             try

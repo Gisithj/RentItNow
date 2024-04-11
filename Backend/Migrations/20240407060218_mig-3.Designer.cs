@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RentItNow.Data;
 
@@ -11,9 +12,10 @@ using RentItNow.Data;
 namespace RentItNow.Migrations
 {
     [DbContext(typeof(RentItNowDbContext))]
-    partial class RentItNowDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240407060218_mig-3")]
+    partial class mig3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -223,9 +225,8 @@ namespace RentItNow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ItemOverview")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("RentalPrice")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("RenterId")
                         .HasColumnType("uniqueidentifier");
@@ -235,50 +236,6 @@ namespace RentItNow.Migrations
                     b.HasIndex("RenterId");
 
                     b.ToTable("Items");
-                });
-
-            modelBuilder.Entity("RentItNow.Models.ItemImage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ImageURL")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("ItemId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
-
-                    b.ToTable("ItemImage");
-                });
-
-            modelBuilder.Entity("RentItNow.Models.ItemSpecification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("FeatureDetail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("ItemId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SpecificationFeature")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
-
-                    b.ToTable("ItemSpecification");
                 });
 
             modelBuilder.Entity("RentItNow.Models.RentalItem", b =>
@@ -311,29 +268,6 @@ namespace RentItNow.Migrations
                     b.HasIndex("RenterId");
 
                     b.ToTable("RentalItem");
-                });
-
-            modelBuilder.Entity("RentItNow.Models.RentalOption", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ItemId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("RentalOptionName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
-
-                    b.ToTable("RentalOption");
                 });
 
             modelBuilder.Entity("RentItNow.Models.Renter", b =>
@@ -500,28 +434,6 @@ namespace RentItNow.Migrations
                     b.Navigation("Renter");
                 });
 
-            modelBuilder.Entity("RentItNow.Models.ItemImage", b =>
-                {
-                    b.HasOne("RentItNow.Models.Item", "Item")
-                        .WithMany("ImageURLs")
-                        .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Item");
-                });
-
-            modelBuilder.Entity("RentItNow.Models.ItemSpecification", b =>
-                {
-                    b.HasOne("RentItNow.Models.Item", "Item")
-                        .WithMany("Specifications")
-                        .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Item");
-                });
-
             modelBuilder.Entity("RentItNow.Models.RentalItem", b =>
                 {
                     b.HasOne("RentItNow.Models.Customer", "Customer")
@@ -549,17 +461,6 @@ namespace RentItNow.Migrations
                     b.Navigation("Renter");
                 });
 
-            modelBuilder.Entity("RentItNow.Models.RentalOption", b =>
-                {
-                    b.HasOne("RentItNow.Models.Item", "Item")
-                        .WithMany("RentalOptions")
-                        .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Item");
-                });
-
             modelBuilder.Entity("RentItNow.Models.Renter", b =>
                 {
                     b.HasOne("RentItNow.Models.User", "User")
@@ -576,13 +477,7 @@ namespace RentItNow.Migrations
 
             modelBuilder.Entity("RentItNow.Models.Item", b =>
                 {
-                    b.Navigation("ImageURLs");
-
                     b.Navigation("RentalItem");
-
-                    b.Navigation("RentalOptions");
-
-                    b.Navigation("Specifications");
                 });
 
             modelBuilder.Entity("RentItNow.Models.Renter", b =>

@@ -12,9 +12,7 @@ namespace RentItNow.Models
         public string RenterAddress { get; set;} = string.Empty;
         public string ContactNo { get; set; } = string.Empty;
         public ICollection<Item?> Items { get; set; } = new List<Item?>();
-
-
-        /*public Id UserId { get; set; }*/
+        public ICollection<RentalItem> RentalItems { get; set; } = new List<RentalItem>();
         public User User { get; set; } = null!;
 
 

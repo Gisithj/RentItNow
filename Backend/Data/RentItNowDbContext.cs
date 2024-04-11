@@ -23,12 +23,17 @@ namespace RentItNow.Data
                 .WithOne(e => e.Renter)
                 .HasForeignKey(e => e.RenterId)
                 .OnDelete(DeleteBehavior.Restrict);
-                
+
+            modelBuilder.Entity<Renter>()
+                .HasMany(e => e.RentalItems)
+                .WithOne(e => e.Renter)
+                .HasForeignKey(e => e.RenterId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Customer>()
-                .HasMany(e => e.RentedItems)
-                .WithOne(e => e.Customer)
-                .HasForeignKey(e => e.CustomerId)
+                .HasMany(c => c.RentedItems)
+                .WithOne(ri => ri.Customer)
+                .HasForeignKey(ri => ri.CustomerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<RentalItem>()
@@ -39,7 +44,7 @@ namespace RentItNow.Data
 
             modelBuilder.Entity<RentalItem>()
                 .HasOne(ri => ri.Item)
-                .WithMany()
+                .WithMany(i => i.RentalItem)
                 .HasForeignKey(ri => ri.ItemID)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -51,5 +56,6 @@ namespace RentItNow.Data
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Renter> Renters => Set<Renter>();
         public DbSet<Item> Items => Set<Item>();
+        public DbSet<RentalItem> RentalItem => Set<RentalItem>();
     }
 }

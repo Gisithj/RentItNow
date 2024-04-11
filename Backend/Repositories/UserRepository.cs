@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RentItNow.Data;
 using RentItNow.Helpers;
+using RentItNow.Interfaces;
 using RentItNow.Models;
-using RentItNow.Repositories;
 using System.Configuration;
 
-namespace RentItNow.Services
+namespace RentItNow.Repositories
 {
     public class UserRepository : GenericRepository<User>, IUserRepository
     {
@@ -15,8 +15,8 @@ namespace RentItNow.Services
         private readonly SignInManager<User> _signInManager;
         public UserRepository(RentItNowDbContext context, UserManager<User> userManager, SignInManager<User> signInManager) : base(context)
         {
-            _userManager= userManager;
-            _signInManager= signInManager;
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         public async override Task<IEnumerable<User>?> GetAllAsync()
@@ -115,29 +115,29 @@ namespace RentItNow.Services
             }
         }
 
-/*        public async override Task<User> AddAsync(User entity)
+        /*        public async override Task<User> AddAsync(User entity)
+                {
+                    try
+                    {
+                        var user = await dbSet.AddAsync(entity);
+                        return user.Entity;
+                    }
+                    catch (Exception ex)
+                    {
+
+                        throw new Exception(ex.Message);
+                    }
+                }*/
+        public async Task<IdentityResult> CreateUserAsync(User user, string? password)
         {
             try
-            {
-                var user = await dbSet.AddAsync(entity);
-                return user.Entity;
-            }
-            catch (Exception ex)
             {
 
-                throw new Exception(ex.Message);
-            }
-        }*/
-        public async Task<IdentityResult> CreateUserAsync(User user,string? password)
-        {
-            try
-            {
-               
-                    var userCreated = await _userManager.CreateAsync(user, password);
-                    return userCreated;
-                
-                
-                
+                var userCreated = await _userManager.CreateAsync(user, password);
+                return userCreated;
+
+
+
             }
             catch (Exception ex)
             {
@@ -150,9 +150,9 @@ namespace RentItNow.Services
         {
             try
             {
-                 var userCreated = await _userManager.CreateAsync(user);
-                 return userCreated;
-            
+                var userCreated = await _userManager.CreateAsync(user);
+                return userCreated;
+
             }
             catch (Exception ex)
             {
@@ -212,6 +212,6 @@ namespace RentItNow.Services
             }
         }
 
-     
+
     }
 }
