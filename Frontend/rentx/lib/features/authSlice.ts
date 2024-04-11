@@ -14,13 +14,14 @@ interface AuthState {
     id:string,
     userName:string,
     email:string,
+    roleId:string,
     userRoles:string[]
   } | null;
   status:String
 }
 
 const initialState: AuthState = {
-  isLoggedIn: false, // Check for window first
+  isLoggedIn: false,
   user:null,
   status:'no auth'
 };

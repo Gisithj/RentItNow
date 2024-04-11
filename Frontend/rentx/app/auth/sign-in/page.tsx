@@ -2,19 +2,23 @@
 import { LOGIN } from '@/api/auth';
 import { login } from '@/lib/features/authSlice';
 import { useAppDispatch } from '@/lib/hooks';
+import { RootState } from '@/lib/store';
+import { startConnection } from '@/utils/signalrService';
 import { passowrdError,validatePassword } from '@/utils/validation-helper';
 import { Input } from '@nextui-org/input'
 import { Button, Card, CardBody, Link, Tab, Tabs } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { VscEye, VscEyeClosed } from 'react-icons/vsc';
+import { useSelector } from 'react-redux';
 
 function SignIn() {
 
   const [selectedTab, setSelectedTab] = useState(""); 
   const [valueUsername, setValueUsername] = useState("example@gmail.com"); 
   const [valuePassword, setValuePassword] = useState(""); 
-
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const dispatch = useAppDispatch();
   const router = useRouter();
 
@@ -29,7 +33,6 @@ function SignIn() {
   const toggleVisibility = () => setIsVisible(!isVisible);
 
   const handleSubmit = async()=>{
-    
       try {
         const loginCredentials = {        
           "username":valueUsername ,
@@ -42,21 +45,34 @@ function SignIn() {
           console.log("in heeeeeeeeeee");
           
           dispatch(login())  
-          if(selectedTab === "renter"){
-            console.log("in the renter route");
-            router.push("/dashboard/home") 
-          }else{
-            router.push("/") 
-          }
-          
-        }       
-           
-        
+            if(selectedTab === "renter"){
+              console.log("in the renter route");
+              startConnection();
+              router.push("/dashboard/home") 
+            }else{
+              router.push("/") 
+            }      
+        }   
       } catch (error) {
         console.log(error);
-        
       }
     }
+    console.log(user);
+    
+    useEffect(()=>{
+      if(isLoggedIn && user){
+        if(user.userRoles.includes("Renter")){
+          startConnection();
+          router.push("/dashboard/home") 
+        }else{
+          startConnection();
+          router.push("/") 
+        }
+      }else{
+        router.push("/auth/sign-in") 
+      }
+    },[isLoggedIn, router, user])
+    
   const handleTabs = (value:any)=>{
     setSelectedTab(value)
     

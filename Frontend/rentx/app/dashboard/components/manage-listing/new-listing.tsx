@@ -19,6 +19,11 @@ import { IoMdArrowBack } from "react-icons/io";
 import { VscEye } from "react-icons/vsc";
 import ProductCarousel from "./listing-carousel/listing-images-carousel";
 import { FaCircleCheck } from "react-icons/fa6";
+import { useRouter } from "next/navigation";
+import { CREATE_ITEM } from "@/api/item";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
+import { handleUpload } from "@/utils/imageUpload";
 interface NewListingProps {
   handleNewListingClick: () => any;
 }
@@ -26,17 +31,20 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
   const [valueItemName, setValueItemName] = useState("");
   const [selectedRentOption, setSelectedRentOption] = useState("");
   const [typedRentValue, setTypedRentValue] = useState(0);
-  const [keyValuePairs, setKeyValuePairs] = useState<{ key: string; value: number }[]>([]);
+  const [rentalOptions, setRentalOptions] = useState<{ rentalOptionName: string; price: number }[]>([]);
   const [featureName, setFeatureName] = useState("");
   const [featureValue, setFeatureValue] = useState("");
-  const [features, setFeatures] = useState<{ key: string; value: string }[]>([]);
+  const [features, setFeatures] = useState<{ specificationFeature: string; featureDetail: string }[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
   const [isCompleted, setIsCompleted] = useState(false);
+  const [description, setDescription] = useState("");
+  const [itemOverview, setItemOverview] = useState("");
   //const [valueHouseNo, setValuePassword] = useState("");
   // const dispatch = useAppDispatch()
-  // const router = useRouter()
+  const user = useSelector((state: RootState) => state.auth.user);
+  const router = useRouter()
   const rentOptions = [
     {
       label: "Rent per hour",
@@ -55,47 +63,47 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
       value: "Rent per month",
     },
   ];
+
+  //handle add feature to the list
   const handleAddFeature = (value: any) => {
     if (featureName && featureValue) {
-      setFeatures([...features, { key: featureName, value: featureValue }]);
+      setFeatures([...features, { specificationFeature: featureName, featureDetail: featureValue }]);
       setFeatureName("");
       setFeatureValue("");
     }
   };
 
-  const handleRemoveFeature = (keyToRemove: string) => {
-    const updatedfeatures = features.filter((pair) => pair.key !== keyToRemove);
+  //handle remove feature from the list
+  const handleRemoveFeature = (specificationFeature: string) => {
+    const updatedfeatures = features.filter((pair) => pair.specificationFeature !== specificationFeature);
     setFeatures(updatedfeatures);
   };
 
-  const handleAddKeyValuePair = () => {
-    console.log(selectedRentOption);
-
+  //handle add rent option to the list
+  const handleAddRentalOption = () => {
     if (selectedRentOption && typedRentValue) {
-      setKeyValuePairs([
-        ...keyValuePairs,
-        { key: selectedRentOption, value: typedRentValue },
+      setRentalOptions([
+        ...rentalOptions,
+        { rentalOptionName: selectedRentOption, price: typedRentValue },
       ]);
       setSelectedRentOption("");
       setTypedRentValue(0);
     }
-    console.log(keyValuePairs);
   };
 
-  const handleRemoveKeyValuePair = (keyToRemove: string) => {
-    const updatedKeyValuePairs = keyValuePairs.filter(
-      (pair) => pair.key !== keyToRemove
+  //handle remove rent option from the list
+  const handleRemoveRentalOption = (keyToRemove: string) => {
+    const updatedRentalOptions = rentalOptions.filter(
+      (pair) => pair.rentalOptionName !== keyToRemove
     );
-    setKeyValuePairs(updatedKeyValuePairs);
+    setRentalOptions(updatedRentalOptions);
   };
 
-  const selectedKeys = keyValuePairs.map((pair) => pair.key);
+  const selectedRentalOptions = rentalOptions.map((pair) => pair.rentalOptionName);
 
 
-  const handleFileChange = (event:React.ChangeEvent<HTMLInputElement>) => {
-    
-    const files = Array.from(event.target.files || []);
-    
+  const handleFileChange = (event:React.ChangeEvent<HTMLInputElement>) => {    
+    const files = Array.from(event.target.files || []);    
     setSelectedImages(files);
 
     // Preview images before uploading
@@ -105,6 +113,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
     console.log(selectedImages);
   };
 
+  // Remove image from the list
   const removeImage = (index: number) => {
     const updatedImages = [...selectedImages];
     updatedImages.splice(index, 1);
@@ -115,47 +124,30 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
     setImagePreviews(updatedPreviews);
   };
 
-  const handleUpload = () => {
-    // Convert selected images to base64
-    // console.log(imagePreviews);
-    // console.log(selectedImages);
+  let base64ImageArray: string[] = [];
 
-   
-    const base64Images = selectedImages.map(file => ({
-      name: file.name,
-      base64: URL.createObjectURL(file)
-    }));
+  const handleUploadImages = async () => {
 
-    // Send base64Images to backend
-    // Example: Send base64Images array to backend using fetch or Axios
+    //upload the images to AZURE
+    const imageUrls = await handleUpload(selectedImages);
+    
+    const newItem = {
+      itemName: valueItemName,
+      itemDescription: description,
+      rentalOptions: rentalOptions,
+      specifications: features,
+      images: imageUrls,
+      isRented: false,
+      itemOverview: itemOverview,
+      renterId: user?.roleId!
+    };
+    console.log(newItem);
+    console.log("base64ImageArray2",base64ImageArray);
+
+    //call the create item API
+    const responseData = CREATE_ITEM(newItem)
   };
-  useEffect(()=>{ 
-    console.log(imagePreviews);
-    console.log(selectedImages);
-  },[imagePreviews,selectedImages])
 
-  const handleSubmit = async () => {
-    console.log("in the handle submit");
-
-    try {
-      //   const newCustomer = {
-      //     "name": valueItemName+valueLastName ,
-      //     "email": valueEmail,
-      //     "contactNo": valueMobileNo,
-      //     "address":valueAddress ,
-      //     "userName":valueItemName+valueLastName ,
-      //     "password": valuePassword
-      //   }
-      //   console.log(newCustomer);
-      //   const responseData = await REGISTER_CUSTOMER(newCustomer)
-      //   if( responseData?.status===200){
-      //     // dispatch(login())
-      //     // router.push("/")
-      //   }
-    } catch (error) {
-      console.log(error);
-    }
-  };
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="flex flex-row gap-4 items-center">
@@ -185,13 +177,23 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
             />
             <Textarea
               label="Description"
-              placeholder="Enter your description"
+              placeholder="Enter breif description about the item (no more than two rows)"
               className="w-full"
+              onValueChange={setDescription}
+              maxRows={2}
+              disableAutosize={true}
+            />
+            <Textarea
+              label="Description"
+              placeholder="Enter item overview"
+              className="w-full"
+              maxRows = {8}
+              onValueChange={setItemOverview}
             />
             <div className="flex flex-col gap-4 border-small px-4 py-4 rounded-small border-default-200 dark:border-default-100">
               <h1 className="text-sm font-semibold">Rent options details</h1>
               <div className="flex flex-col gap-2">
-                {keyValuePairs.map((option, index) => (
+                {rentalOptions.map((option, index) => (
                   <div className="flex flex-row gap-2 items-center" key={index}>
                     <Input
                       isReadOnly
@@ -200,7 +202,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                       label="Rent option"
                       variant="bordered"
                       defaultValue="Rent per hour"
-                      value={option.key}
+                      value={option.rentalOptionName}
                       className="max-w-xs"
                     />
                     <Input
@@ -210,7 +212,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                       label="Rental"
                       variant="bordered"
                       defaultValue="0"
-                      value={option.value.toString()}
+                      value={option.price.toString()}
                       className="max-w-xs"
                     />
                     <Button
@@ -218,14 +220,14 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                       size="sm"
                       variant="light"
                       radius="full"
-                      onPress={() => handleRemoveKeyValuePair(option.key)}
+                      onPress={() => handleRemoveRentalOption(option.rentalOptionName)}
                     >
                       <CiCircleMinus fontSize={25} />
                     </Button>
                   </div>
                 ))}
               </div>
-              {keyValuePairs.length < 4 && (
+              {rentalOptions.length < 4 && (
                 <div className="flex flex-row gap-2 items-center">
                   <Select
                     size="sm"
@@ -233,7 +235,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                     className="min-[400px]"
                     selectionMode="single"
                     defaultSelectedKeys=""
-                    disabledKeys={selectedKeys}
+                    disabledKeys={selectedRentalOptions}
                     onChange={(event) =>
                       setSelectedRentOption(event.target.value)
                     }
@@ -263,7 +265,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                     size="sm"
                     variant="light"
                     radius="full"
-                    onPress={handleAddKeyValuePair}
+                    onPress={handleAddRentalOption}
                   >
                     <CiCirclePlus fontSize={25} />
                   </Button>
@@ -282,7 +284,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                       label="Rent option"
                       variant="bordered"
                       defaultValue="Rent per hour"
-                      value={feature.key}
+                      value={feature.specificationFeature}
                       className="max-w-xs"
                     />
                     <Input
@@ -292,7 +294,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                       label="Rental"
                       variant="bordered"
                       defaultValue="0"
-                      value={feature.value.toString()}
+                      value={feature.featureDetail.toString()}
                       className="max-w-xs"
                     />
                     <Button
@@ -300,7 +302,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                       size="sm"
                       variant="light"
                       radius="full"
-                      onPress={() => handleRemoveFeature(feature.key)}
+                      onPress={() => handleRemoveFeature(feature.specificationFeature)}
                     >
                       <CiCircleMinus fontSize={25} />
                     </Button>
@@ -336,16 +338,18 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                   <CiCirclePlus fontSize={25} />
                 </Button>
               </div>
-              <div>
+              
+            </div>
+            <div>
                 <Button
                   variant="solid"
                   size="md"
                   color="primary"
                   // isLoading
                   onPress={onOpen}
+                  onClick={handleUploadImages}
                 >Add Listing</Button>
               </div>
-            </div>
           </div>
           <div className="w-1/2">
           <ProductCarousel imageList={imagePreviews} handleFileChange={handleFileChange} removeImage={removeImage}/>
@@ -365,7 +369,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                
               </ModalBody>
               <ModalFooter className="flex flex-col items-center text-center">
-                <Button color="primary" variant="solid" onPress={onClose}>
+                <Button color="primary" variant="solid" onPress={()=>{onClose();handleNewListingClick()}}>
                   Return to listings
                 </Button>
               </ModalFooter>
