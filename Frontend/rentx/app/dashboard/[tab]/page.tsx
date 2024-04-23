@@ -14,14 +14,22 @@ import NewListing from '../components/manage-listing/new-listing'
 
 function Dashboard({ params }: { params: { tab: string } }) {
   const { tab } = useParams();
+  console.log(tab);
+  
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
   const sideBarTab = useSelector((state: RootState) => state.sidebar.activeSideBarTab);
   
   const [isNewListingActive,setIsNewListingActive] = useState(false)
+  const [isEditistingActive,setIsEditListingActive] = useState(false)
+
   const handleNewListingClick = ()=>{
     setIsNewListingActive(!isNewListingActive)
   }
+  const handleEditListingClick = ()=>{
+    setIsEditListingActive(!isEditistingActive)
+  }
+
  useEffect(()=>{
   if(user && user.userRoles.includes('Renter')){
     router.push(`/dashboard/${tab}`)    
@@ -29,9 +37,10 @@ function Dashboard({ params }: { params: { tab: string } }) {
     router.push('/auth/sign-in')
   }
  },[user])
+ 
   return (
     <div className='w-full'>
-      {
+      {/* {
         isNewListingActive?
         <NewListing handleNewListingClick={handleNewListingClick}/>
         :
@@ -45,19 +54,28 @@ function Dashboard({ params }: { params: { tab: string } }) {
         <Home/>
         :
         <></>
-      }
-      {/* {
-        tab.includes('rental-requests') ?
-        <RentalRequests/>
-        :tab.includes('manage-listings') ?
-        <ManageListings/>
-        :tab.includes('setting') ?
-        <Settings/>
-        :tab.includes('home')?
-        <Home/>
-        :
-        <></>
       } */}
+      {
+        //  isNewListingActive?
+        //  <NewListing handleNewListingClick={handleNewListingClick}/>
+        //  :
+        //  isEditistingActive?
+        //  <NewListing handleNewListingClick={handleNewListingClick}/>
+        //  :
+          tab.includes('add-new-listing')?
+          <NewListing isInEditMode={false}/>
+          :tab.includes('rental-requests') ?
+          <RentalRequests/>
+          :tab.includes('manage-listings') ?
+          //<ManageListings handleNewListingClick={handleNewListingClick} handleEditListingClick={handleEditListingClick}/>
+          <ManageListings />
+          :tab.includes('setting') ?
+          <Settings/>
+          :tab.includes('home')?
+          <Home/>
+          :
+          <></>
+      }
         
         
         

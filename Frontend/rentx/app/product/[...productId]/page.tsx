@@ -5,12 +5,11 @@ import { Button, Input, Link, Select, SelectItem, Skeleton, Spacer, Table, Table
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import DateTimePicker from "@/app/components/ui/datetimepicker";
-import { connection, sendRentalRequestToRenter, startConnection } from "@/utils/signalrService";
+import { connection, sendRentalRequestToRenter} from "@/utils/signalrService";
 import { GET_ITEM_BY_ID_WITH_INCLUDE } from "@/api/item";
 import { ChangeEvent, useEffect, useState } from "react";
 import { Item, Renter } from "@/utils/interfaces";
 import { GET_RENTER_BY_ID } from "@/api/renter";
-import { set, setHours } from "date-fns";
 
 const ProductPage = ({ params }: { params: { productId: string } }) => {
 
@@ -29,6 +28,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
   const [hoursCount, setHoursCount] = useState("1");
   const [rentalDurationErrorMessage, setRentalDurationErrorMessage] = useState("");
   const [isDurationError, setIsDurationError] = useState(false);
+  const [isItemLoaded, setIsItemLoaded] = useState(false);
   let firstHalf: any[] = [];
   let secondHalf: any[]  = [];
 
@@ -54,15 +54,22 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
     calculateRental
   }
   //get the renter details
-  const getRenterDetails = ()=>{
-    item  && !renterDetails &&
+  // const getRenterDetails = async ()=>{
+  //   console.log("in the get renter details");
+  //   console.log(item);
+  //   console.log(renterDetails);
+  //   console.log(isItemLoaded);
+    
+    
+    !renterDetails && isItemLoaded &&
     GET_RENTER_BY_ID(item!.renterId).then((response) => {
         setRenterDetails(response);
+        console.log(response);
         
     }).catch((error) => {
       console.error(error);
     });
-  }
+  // }
   
   //handle duration error message state
   const handleIsDurationError = () => {
@@ -100,17 +107,13 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
 
   //calculate rental
   const calculateRental = () => {
-    console.log("in the calculateRental");
-    console.log(selectedRentalOption.toLowerCase());
     if(!item) return 0;
     if(selectedRentalOption.toLowerCase() !== "rent per hour"){
       if(!startDate || !endDate) return 0;
       if(startDate > endDate) return 0;
-    }
-    
+    }    
 
     if(selectedRentalOption.toLowerCase() === "rent per hour"){
-      console.log("in the hours");
       
       if(parseInt(hoursCount)>24){
         if(!isDurationError){
@@ -176,15 +179,26 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
 
 
   useEffect(() => {
-    if(!item){
+    const getItem = async () => {
       GET_ITEM_BY_ID_WITH_INCLUDE(productId as string).then((response) => {
         setItem(response);
+        console.log(response);
+        
         setSelectedRentalOption(response.rentalOptions[0].rentalOptionName)
-        getRenterDetails();
+        // getRenterDetails();
       }).catch((error) => {
         console.error(error);
+      }).finally(() => {
+        console.log(item);        
+        setIsItemLoaded(true);    
+        console.log(isItemLoaded);
+        
       });
-     
+  }
+    if(!item && !isItemLoaded){
+      getItem();
+      console.log(isItemLoaded);
+      
     }
     
   }, []);
@@ -194,11 +208,18 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
         <div className="flex flex-col gap-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div className="w-full">
-              {item && <ProductCarousel images={item!.imageURLs}/>}
+              {isItemLoaded?
+               item && <ProductCarousel images={item!.imageURLs} />
+              :
+              <Skeleton className="rounded-lg">
+                <div className="h-[400px] aspect-square bg-default-300"></div>
+              </Skeleton>
+              }
+             
             </div>
             <div className="flex flex-col gap-2 items-start">
+              <Skeleton isLoaded={isItemLoaded} className="max-w-xs h-3"/>
               <h1 className="text-4xl font-bold">{item?.itemName}</h1>
-              <h1 className="text-4xl font-bold">{renterDetails && renterDetails?.renterName}</h1>
               {renterDetails && <User
                 name={renterDetails?.renterName}
                 description={
@@ -212,7 +233,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                 }}
               />
               }
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 w-full">
                 {/* <div className="grid grid-cols-2">
                   <div>
                     <ul>
@@ -254,6 +275,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                         label="No of hours"
                         placeholder="Enter no of hours"
                         value={hoursCount}
+                        className="max-w-xs"
                         onChange={(e)=>handleHours(e)} 
                         />
                   </div>

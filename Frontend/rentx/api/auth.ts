@@ -1,4 +1,5 @@
 import api from "@/utils/api";
+import axios from "axios";
 
 interface Login{
     username: string
@@ -27,6 +28,10 @@ export const LOGIN = async (customer:Login)=> {
       
     //   res.status(200).json(response.data);
     } catch (error) {
+      
+      if (axios.isAxiosError(error)) {        
+        return error.response;
+      }
         console.log(error);
         
     //   res.status(500).json({ error: 'Error creating user' });

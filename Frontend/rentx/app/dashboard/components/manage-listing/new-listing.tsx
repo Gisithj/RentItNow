@@ -12,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   useDisclosure,
+  CircularProgress,
 } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import { CiCircleMinus, CiCirclePlus } from "react-icons/ci";
@@ -20,16 +21,24 @@ import { VscEye } from "react-icons/vsc";
 import ProductCarousel from "./listing-carousel/listing-images-carousel";
 import { FaCircleCheck } from "react-icons/fa6";
 import { useRouter } from "next/navigation";
-import { CREATE_ITEM } from "@/api/item";
+import { CREATE_ITEM, GET_ITEM_BY_ID_WITH_INCLUDE, UPDATE_ITEM } from "@/api/item";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { handleUpload } from "@/utils/imageUpload";
+import { Item } from "@/utils/interfaces";
+import { set } from "date-fns";
+import { on } from "events";
 interface NewListingProps {
-  handleNewListingClick: () => any;
+  handleNewListingClick?: () => any;
+  isInEditMode:boolean
+  itemId?:string
 }
-function NewListing({ handleNewListingClick }: NewListingProps) {
+function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingProps) {
+
+  
   const [valueItemName, setValueItemName] = useState("");
   const [selectedRentOption, setSelectedRentOption] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [typedRentValue, setTypedRentValue] = useState(0);
   const [rentalOptions, setRentalOptions] = useState<{ rentalOptionName: string; price: number }[]>([]);
   const [featureName, setFeatureName] = useState("");
@@ -38,13 +47,15 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
-  const [isCompleted, setIsCompleted] = useState(false);
   const [description, setDescription] = useState("");
   const [itemOverview, setItemOverview] = useState("");
+  const [isItemLoadingStarted, setIsItemLoadingStarted] = useState(false);
+  const [isItemLoaded,setIsItemLoaded] = useState(false);
   //const [valueHouseNo, setValuePassword] = useState("");
   // const dispatch = useAppDispatch()
   const user = useSelector((state: RootState) => state.auth.user);
   const router = useRouter()
+
   const rentOptions = [
     {
       label: "Rent per hour",
@@ -63,7 +74,64 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
       value: "Rent per month",
     },
   ];
+  const categories = [
+    {
+      label: "Gardening",
+      value: "Gardening",
+    },
+    {
+      label: "Construction",
+      value: "Construction",
+    },
+    {
+      label: "Woodworking",
+      value: "Woodworking",
+    },
+    {
+      label: "Plumbing",
+      value: "Plumbing",
+    },
+    {
+      label: "Electrical",
+      value: "Electrical",
+    },
+    {
+      label: "Automotive",
+      value: "Automotive",
+    },
+    {
+      label: "Painting",
+      value: "Painting",
+    },
+    {
+      label: "Home Improvement",
+      value: "Home Improvement",
+    },
+    {
+      label: "Cleaning",
+      value: "Cleaning",
+    }
+  ];
 
+
+  //fetch the item details if in edit mode
+  useEffect(() => {
+    if(isInEditMode){
+      GET_ITEM_BY_ID_WITH_INCLUDE(itemId!).then((response) => {       
+        
+        setValueItemName(response.itemName);
+        setDescription(response.itemDescription);
+        setItemOverview(response.itemOverview);
+        setRentalOptions(response.rentalOptions);
+        setFeatures(response.specifications);
+        setSelectedCategory(response.category);
+        setImagePreviews(response.imageURLs);
+      
+      }).catch((error) => {
+        console.error(error);
+      });
+    }
+  }, []);
   //handle add feature to the list
   const handleAddFeature = (value: any) => {
     if (featureName && featureValue) {
@@ -99,9 +167,10 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
     setRentalOptions(updatedRentalOptions);
   };
 
+  //curently selected rental options
   const selectedRentalOptions = rentalOptions.map((pair) => pair.rentalOptionName);
 
-
+  //handle image file change
   const handleFileChange = (event:React.ChangeEvent<HTMLInputElement>) => {    
     const files = Array.from(event.target.files || []);    
     setSelectedImages(files);
@@ -124,30 +193,50 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
     setImagePreviews(updatedPreviews);
   };
 
-  let base64ImageArray: string[] = [];
-
   const handleUploadImages = async () => {
-
+    setIsItemLoadingStarted(true);
     //upload the images to AZURE
     const imageUrls = await handleUpload(selectedImages);
+
+    if(isInEditMode){
+      //call the update item API
+      const updatedItem = {
+        itemId:itemId!,
+        itemName: valueItemName,
+        itemDescription: description,
+        category:selectedCategory,
+        rentalOptions: rentalOptions,
+        specifications: features,
+        imageURLs: imageUrls,
+        isRented: false,
+        itemOverview: itemOverview,
+        renterId: user?.roleId!
+      };
+      console.log(updatedItem);
+    const responseData = UPDATE_ITEM(updatedItem).finally(()=>{
+      setIsItemLoadingStarted(false);
+    });
+    }else{
+      //call the create item API
+      const newItem = {
+        itemName: valueItemName,
+        itemDescription: description,
+        category:selectedCategory,
+        rentalOptions: rentalOptions,
+        specifications: features,
+        imageURLs: imageUrls,
+        isRented: false,
+        itemOverview: itemOverview,
+        renterId: user?.roleId!
+      };
+      console.log(newItem);
+      const responseData = CREATE_ITEM(newItem).finally(()=>{
+        setIsItemLoadingStarted(false);
+      });
+    }
     
-    const newItem = {
-      itemName: valueItemName,
-      itemDescription: description,
-      rentalOptions: rentalOptions,
-      specifications: features,
-      images: imageUrls,
-      isRented: false,
-      itemOverview: itemOverview,
-      renterId: user?.roleId!
-    };
-    console.log(newItem);
-    console.log("base64ImageArray2",base64ImageArray);
-
-    //call the create item API
-    const responseData = CREATE_ITEM(newItem)
   };
-
+  
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="flex flex-row gap-4 items-center">
@@ -158,11 +247,11 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
           radius="sm"
           size="sm"
           variant="ghost"
-          onPress={handleNewListingClick}
+          onPress={()=>router.back()}
         >
           Go back
         </Button>
-        <h1 className="text-2xl font-bold">Add a new listing</h1>
+        <h1 className="text-2xl font-bold">{isInEditMode?'Edit listing':'Add a new listing'}</h1>
       </div>
       <div className="w-full flex flex-col gap-4">
         <form action="" className="flex flex-row gap-4 w-full">
@@ -175,10 +264,51 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
               onValueChange={setValueItemName}
               isRequired
             />
+            
+             {isInEditMode? 
+             selectedCategory && <Select
+                    size="sm"
+                    label="Select a category"
+                    className="min-[400px]"
+                    selectionMode="single"
+                    defaultSelectedKeys={[selectedCategory]}
+                    onChange={(event) =>
+                      setSelectedCategory(event.target.value)
+                    }
+                  >
+                    {categories.map((category) => (
+                      <SelectItem
+                        key={category.value}
+                        value={category.value}
+                      >
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                :
+                <Select
+                    size="sm"
+                    label="Select a category"
+                    className="min-[400px]"
+                    selectionMode="single"
+                    onChange={(event) =>
+                      setSelectedCategory(event.target.value)
+                    }
+                  >
+                    {categories.map((category) => (
+                      <SelectItem
+                        key={category.value}
+                        value={category.value}
+                      >
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </Select>}
             <Textarea
               label="Description"
               placeholder="Enter breif description about the item (no more than two rows)"
               className="w-full"
+              value={description}
               onValueChange={setDescription}
               maxRows={2}
               disableAutosize={true}
@@ -188,6 +318,7 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
               placeholder="Enter item overview"
               className="w-full"
               maxRows = {8}
+              value={itemOverview}
               onValueChange={setItemOverview}
             />
             <div className="flex flex-col gap-4 border-small px-4 py-4 rounded-small border-default-200 dark:border-default-100">
@@ -345,10 +476,10 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
                   variant="solid"
                   size="md"
                   color="primary"
-                  // isLoading
-                  onPress={onOpen}
+                  onPress={()=>{onOpen()}}
                   onClick={handleUploadImages}
-                >Add Listing</Button>
+                >
+                  {isInEditMode?'Update listing':'Add Listing'}</Button>
               </div>
           </div>
           <div className="w-1/2">
@@ -364,12 +495,19 @@ function NewListing({ handleNewListingClick }: NewListingProps) {
             <>
               <ModalHeader className="flex flex-col gap-1"/>
               <ModalBody className="flex flex-col items-center text-center">
+                {isItemLoadingStarted?
+                <CircularProgress color="default" aria-label={isInEditMode?'Updating...':'Adding...'}/>
+                :
                 <FaCircleCheck fontSize={30} className="text-success"/>
-                <h1 className="text-xl font-medium">Your item is listed successfully!!</h1>
+                }
+                <h1 className="text-xl font-medium">
+                  {isItemLoadingStarted?isInEditMode?'Updating the item...':'Adding the item...':
+                  isInEditMode?'Your item is updated successfully!!':'Your item is added successfully!!'}
+                </h1>
                
               </ModalBody>
               <ModalFooter className="flex flex-col items-center text-center">
-                <Button color="primary" variant="solid" onPress={()=>{onClose();handleNewListingClick()}}>
+                <Button color="primary" variant="solid" onPress={()=>router.back()}>
                   Return to listings
                 </Button>
               </ModalFooter>

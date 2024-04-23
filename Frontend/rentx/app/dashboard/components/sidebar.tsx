@@ -18,6 +18,7 @@ function Sidebar() {
   }
   const handleSidebarTabClick = (value:string)=>{
     dispatch(setActiveSidebarTab(value))
+    router.push(`/dashboard/${value}`) 
     // router.push(`/dashboard/${value}`, { shallow: true })
   }
   return (

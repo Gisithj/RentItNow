@@ -1,15 +1,6 @@
 import api from "@/utils/api";
+import { Item, UpdateItem } from "@/utils/interfaces";
 
-interface Item {
-  itemName: string;
-  itemDescription: string;
-  rentalOptions: { rentalOptionName: string; price: number }[];
-  specifications: { specificationFeature: string; featureDetail: string }[];
-  images: string[];
-  itemOverview: string;
-  isRented: boolean;
-  renterId: string;
-}
 export const GET_ALL_ITEMS_WITH_INCLUDE = async () => {
   try {    
     const response = await api.get("/Items/WithInclude");
@@ -26,6 +17,14 @@ export const GET_ITEM_BY_ID_WITH_INCLUDE = async (productId: string) => {
     console.error(`Error fetching item with id ${productId}:`, error);
   }
 };
+export const GET_ITEMS_BY_RENTER_WITH_INCLUDE = async (renterId: string) => {
+  try {
+    const response = await api.get(`/Items/ItemsByRenter/${renterId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching item with id ${renterId}:`, error);
+  }
+};
 
 export const CREATE_ITEM = async (item: Item) => {
   try {
@@ -33,10 +32,11 @@ export const CREATE_ITEM = async (item: Item) => {
 
     const newItem = {
       itemName: item.itemName,
+      category:item.category,
       itemDescription: item.itemDescription,
       rentalOptions: item.rentalOptions,
       specifications: item.specifications,
-      images: item.images,
+      images: item.imageURLs,
       isRented: item.isRented,
       itemOverview: item.itemOverview,
       renterId: item.renterId,
@@ -51,5 +51,41 @@ export const CREATE_ITEM = async (item: Item) => {
     console.log(error);
 
     //   res.status(500).json({ error: 'Error creating user' });
+  }
+};
+export const UPDATE_ITEM = async (item: UpdateItem) => {
+  try {
+    console.log("in herer");
+
+    const newItem = {
+      itemId: item.itemId,
+      itemName: item.itemName,
+      category:item.category,
+      itemDescription: item.itemDescription,
+      rentalOptions: item.rentalOptions,
+      specifications: item.specifications,
+      images: item.imageURLs,
+      isRented: item.isRented,
+      itemOverview: item.itemOverview,
+    };
+    console.log(newItem);
+
+    const response = await api.put("/Items", newItem); // Your API endpoint
+    return response;
+
+    //   res.status(200).json(response.data);
+  } catch (error) {
+    console.log(error);
+
+    //   res.status(500).json({ error: 'Error creating user' });
+  }
+};
+
+export const DELETE_ITEM = async (itemId: string) => {
+  try {
+    const response = await api.delete(`/Items/${itemId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching item with id ${itemId}:`, error);
   }
 };

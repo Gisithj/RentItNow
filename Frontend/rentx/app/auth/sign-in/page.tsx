@@ -17,6 +17,7 @@ function SignIn() {
   const [selectedTab, setSelectedTab] = useState(""); 
   const [valueUsername, setValueUsername] = useState("example@gmail.com"); 
   const [valuePassword, setValuePassword] = useState(""); 
+  const [isCredentialsWrong,setIsCredentialsWrong] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const dispatch = useAppDispatch();
@@ -52,7 +53,10 @@ function SignIn() {
             }else{
               router.push("/") 
             }      
-        }   
+        }else if(responseData?.status===401){
+          console.log("in the 401");          
+          setIsCredentialsWrong(true)
+        } 
       } catch (error) {
         console.log(error);
       }
@@ -79,22 +83,22 @@ function SignIn() {
   }
   return (
       <div className='flex flex-col items-center gap-10 justify-center'>
-        <div className='flex flex-col items-center gap-10 shadow-lg w-fit md:w-2/3 lg:w-1/3 p-20 rounded-2xl'>
+        <div className='flex flex-col items-center gap-10 shadow-lg w-fit md:w-2/3 lg:w-1/3 p-20 rounded-2xl h-full'>
           <div>
             <h1 className='text-2xl font-bold'>Welcome Back</h1>
           </div>
           <form action="" className='flex flex-col gap-4 w-full'>
-          <Tabs aria-label="Options" onSelectionChange={(e)=>handleTabs(e)}>
-            <Tab key="customer" title="Customer">
-              <Card className='w-full'>
-                <CardBody className='w-full'>
+          <Tabs aria-label="Options" onSelectionChange={(e)=>handleTabs(e)} className='flex justify-center'>
+            <Tab key="customer" title="Customer" className='flex flex-col gap-4'>
+              {/* <Card className='w-full'>
+                <CardBody className='w-full flex flex-col gap-4'> */}
                   <Input
                     type="text"
                     variant={"bordered"}
                     label="Username"
                     // isInvalid={isInvalidEmail}
                     // color={isInvalidEmail ? "danger" : "default"}
-                    // errorMessage={isInvalidEmail && "Please enter a valid Username"}
+                    // errorMessage={isCredentialsWrong && "Please enter a valid Username"}
                     onValueChange={setValueUsername}/>
                   <Input
                     type={isVisible ? "text" : "password"}
@@ -111,20 +115,20 @@ function SignIn() {
                     }
                     isInvalid={isInvalidPassword}
                     color={isInvalidPassword ? "danger" : "default"}
-                    errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`}
+                    errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`||
+                    isCredentialsWrong && "Incorrect username or password"}
                     onValueChange={setValuePassword}
                     />
-                
                   <Button color='primary' onClick={handleSubmit}>Log in</Button>
                   <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
                         Sign Up
                   </Button>
-                </CardBody>
-              </Card>  
+                {/* </CardBody>
+              </Card>   */}
             </Tab>
-            <Tab key="renter" title="Renter">
-              <Card>
-                <CardBody>
+            <Tab key="renter" title="Renter" className='flex flex-col gap-4'>
+              {/* <Card>
+                <CardBody> */}
                 <Input
               type="text"
               variant={"bordered"}
@@ -148,7 +152,8 @@ function SignIn() {
               }
               isInvalid={isInvalidPassword}
               color={isInvalidPassword ? "danger" : "default"}
-              errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`}
+              errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`||
+              isCredentialsWrong && "Incorrect username or password"}
               onValueChange={setValuePassword}
               />
           
@@ -156,8 +161,8 @@ function SignIn() {
             <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
                   Sign Up
             </Button>
-                </CardBody>
-              </Card>  
+                {/* </CardBody>
+              </Card>   */}
             </Tab>           
           </Tabs>
            
