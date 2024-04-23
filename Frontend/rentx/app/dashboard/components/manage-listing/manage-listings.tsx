@@ -1,71 +1,35 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Listing from './listing'
 import { Button } from '@nextui-org/react'
+import { GET_ALL_ITEMS_WITH_INCLUDE, GET_ITEMS_BY_RENTER_WITH_INCLUDE } from '@/api/item';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store';
+import { useRouter } from 'next/navigation';
 
-interface ManageListingsProps{
-  handleNewListingClick:()=>any
-}
-function ManageListings({handleNewListingClick}:ManageListingsProps) {
-  const list = [
-    {      
+function ManageListings() {
 
-        itemId:"1",
-        itemName:"Tangerine",
-        itemDescription:"Tangerine",
-        itemFeature:'size',
-        priceOptions:['day,week,month'],
-        itemImage: "/assets/images/fruit-2.jpeg",
-        price:20
-      },
-      {
-        itemId:"2",
-        itemName:"Tangerine",
-        itemDescription:"Tangerine",
-        itemFeature:'size',
-        priceOptions:['day,week,month'],
-        itemImage: "/assets/images/fruit-2.jpeg",
-        price:20
-      },
-      {
-        itemId:"3",
-        itemName:"Tangerine",
-        itemDescription:"Tangerine",
-        itemFeature:'size',
-        priceOptions:['day,week,month'],
-        itemImage: "/assets/images/fruit-2.jpeg",
-        price:20
-      },
-      {
-        itemId:"4",
-        itemName:"Tangerine",
-        itemDescription:"Tangerine",
-        itemFeature:'size',
-        priceOptions:['day,week,month'],
-        itemImage: "/assets/images/fruit-2.jpeg",
-        price:20
-      },
-      {
-        itemId:"5",
-        itemName:"Tangerine",
-        itemDescription:"Tangerine",
-        itemFeature:'size',
-        priceOptions:['day,week,month'],
-        itemImage: "/assets/images/fruit-2.jpeg",
-        price:20
-      },
-     
-      {
-        itemId:"6",
-        itemName:"Tangerine",
-        itemDescription:"Tangerine",
-        itemFeature:'size',
-        priceOptions:['day,week,month'],
-        itemImage: "/assets/images/fruit-2.jpeg",
-        price:20
-      }
-   
-   
-  ];
+  const router = useRouter()
+  const [itemList,setItemList] = useState([])
+  const [isItemListLoaded,setIsItemListLoaded] = useState(false)
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  const handleAddNewListingClick = ()=>{
+    router.push(`/dashboard/add-new-listing`) 
+  }
+
+  useEffect(() => {
+    user && GET_ITEMS_BY_RENTER_WITH_INCLUDE(user?.roleId).then((response) => {
+      console.log("in herer");
+      console.log(response);
+      setItemList(response);
+    }).catch((error) => {
+      console.error(error);
+    }).finally(() => {
+      setIsItemListLoaded(true);
+    });
+    console.log(itemList);
+  }, [user]);
+
   return (
     <div className='w-full flex flex-col gap-4'>
       <div className='flex flex-row justify-between'>
@@ -76,16 +40,18 @@ function ManageListings({handleNewListingClick}:ManageListingsProps) {
                 className="data-[hover]:bg-foreground/10"
                 radius="lg"
                 variant="solid"
-                onPress={handleNewListingClick}
+                onPress={handleAddNewListingClick}
               >
                 Add Listing
               </Button>
       </div>
       <div className='w-full flex flex-col gap-4'>
         {
-          list.map((listing,index)=>(
+          itemList && itemList.length>0 ? itemList.map((listing,index)=>(
             <Listing listing={listing} key={index}/>
           ))
+          :
+          <span>No items</span>
         }
        
       </div>
