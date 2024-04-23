@@ -5,6 +5,7 @@ namespace RentItNow.DTOs.Item
     public class CreateItemDto
     {
         public string ItemName { get; set; } = string.Empty;
+        public string Category {  get; set; } = string.Empty;
         public string ItemDescription { get; set; } = string.Empty;
         public string ItemOverview { get; set; } = string.Empty;
         public List<RentalOptionDto> RentalOptions { get; set; } = null!;

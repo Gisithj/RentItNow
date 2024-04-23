@@ -62,6 +62,28 @@ namespace RentItNow.Repositories
 
         }
 
+        public async Task<IEnumerable<Item>> GetAllItemsByRenterWithIncludeAsync(Guid renterId)
+        {
+            try
+            {
+                var items = await dbSet
+                                .Where(i=>i.RenterId == renterId)
+                                .Include(i => i.ImageURLs)
+                                .Include(i => i.RentalOptions)
+                                .ToListAsync();
+                if (items == null || items.Count() == 0)
+                {
+                    throw new Exception("Items not found");
+                }
+                return items;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+
+        }
         
 
     }

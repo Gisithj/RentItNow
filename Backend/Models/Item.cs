@@ -9,6 +9,7 @@ namespace RentItNow.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid ItemId { get; set; }
         public string ItemName { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
         public string ItemDescription { get; set; } = string.Empty;
         public string ItemOverview { get; set; } = string.Empty;
         public ICollection<RentalOption> RentalOptions { get; set; } = null!;

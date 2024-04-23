@@ -104,7 +104,10 @@ namespace RentItNow.Controllers
                     expiration = token.ValidTo
                 });*/
             }
-            return Unauthorized();
+            else
+            {
+               return Unauthorized(new { message = "Invalid username or password" });
+            }
         }
 
         [HttpPost("logout")]
