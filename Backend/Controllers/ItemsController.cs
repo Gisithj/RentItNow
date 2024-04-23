@@ -61,6 +61,7 @@ namespace RentItNow.Controllers
                 return NotFound(ex.Message);
             }
         }
+
         [HttpGet("WithInclude/{id}")]
         public async Task<ActionResult<ItemDto>> GetItemByIdWithInclude(Guid id)
         {
@@ -77,6 +78,7 @@ namespace RentItNow.Controllers
 
             }
         }
+
         [HttpGet("WithInclude")]
         public async Task<ActionResult<IEnumerable<ItemDto>>> GetItemsWithInclude()
         {
@@ -86,6 +88,22 @@ namespace RentItNow.Controllers
                 var itemDtos = _mapper.Map<IEnumerable<ItemDto>>(allitems).ToList();
 
                
+                return itemDtos;
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("ItemsByRenter/{renterId}")]
+        public async Task<ActionResult<IEnumerable<ItemDto>>> GetItemsByRenterWithInclude(Guid renterId)
+        {
+            try
+            {
+                var allitems = await _itemService.GetAllItemsByRenterWithInclude(renterId);
+                var itemDtos = _mapper.Map<IEnumerable<ItemDto>>(allitems).ToList();
                 return itemDtos;
             }
             catch (Exception ex)
@@ -114,25 +132,23 @@ namespace RentItNow.Controllers
 
         // PUT: api/Items/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutItem(Guid id, UpdateItemDto updateItemDto)
+        [HttpPut]
+        public async Task<IActionResult> PutItem(UpdateItemDto updateItemDto)
         {
-            if (updateItemDto == null || !_unitOfWork.Renter.IsExists(updateItemDto.RenterId ))
+            try
             {
-                return BadRequest();
+                
+                //var updatedItem = _mapper.Map<Item>(updateItemDto);
+                await _itemService.UpdateItem(updateItemDto);
+                return Ok(updateItemDto);
+
             }
-            var existingItem = await _unitOfWork.Item.GetByIdAsync(id);
-            if (existingItem == null)
+            catch (Exception ex)
             {
-                return BadRequest();
+
+                return NotFound(ex.Message);
             }
-            Item item = _mapper.Map(updateItemDto, existingItem);
-
-            var updatedItem = await _unitOfWork.Item.UpdateAsync(item);
-
-            await _unitOfWork.CompleteAsync();
-
-            return Ok(updatedItem);
+        
         }
 
         // POST: api/Items

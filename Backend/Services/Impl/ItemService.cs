@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using RentItNow.configurations;
 using RentItNow.Data;
+using RentItNow.DTOs.Item;
 using RentItNow.Models;
 using RentItNow.Repositories;
 
@@ -9,10 +11,12 @@ namespace RentItNow.Services
     public class ItemService : IItemService
     {
         private readonly IUnitOfWork _unitOfWork;
-
-        public ItemService(IUnitOfWork unitOfWork)
+        private readonly IMapper _mapper;
+        public ItemService(IUnitOfWork unitOfWork,IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
+
         }
 
         public async Task<Item> GetItemById(Guid id)
@@ -29,6 +33,23 @@ namespace RentItNow.Services
             await _unitOfWork.Item.AddAsync(item);
             await _unitOfWork.CompleteAsync();
             return item;
+        }
+        public async Task<Item> UpdateItem(UpdateItemDto updatedItem)
+        {
+            if (updatedItem == null )
+            {
+                throw new Exception("Item not found");
+            }
+            var itemToUpdate = await _unitOfWork.Item.GetItemWithIncludeByIdAsync(updatedItem.ItemId);
+            if (itemToUpdate == null)
+            {
+                throw new Exception("No existing item not found");
+            }
+            _mapper.Map(updatedItem,itemToUpdate);
+            var itemUpdated = await _unitOfWork.Item.UpdateAsync(itemToUpdate);
+
+            await _unitOfWork.CompleteAsync();
+            return itemUpdated;
         }
         public async Task<IEnumerable<Item>> GetAllItems()
         {
@@ -70,5 +91,14 @@ namespace RentItNow.Services
             await _unitOfWork.CompleteAsync();
         }
 
+        public async Task<IEnumerable<Item>> GetAllItemsByRenterWithInclude(Guid renterId)
+        {
+            var items = await _unitOfWork.Item.GetAllItemsByRenterWithIncludeAsync(renterId);
+            if (items == null || items.Count() == 0)
+            {
+                throw new Exception("Items not found");
+            }
+            return items;
+        }
     }
 }

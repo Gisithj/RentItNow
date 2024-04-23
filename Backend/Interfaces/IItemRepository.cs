@@ -8,5 +8,6 @@ namespace RentItNow.Interfaces
         
         public Task<Item> GetItemWithIncludeByIdAsync(Guid id);
         public Task<IEnumerable<Item>> GetAllItemsWithIncludeAsync();
+        public Task<IEnumerable<Item>> GetAllItemsByRenterWithIncludeAsync(Guid renterId);
     }
 }
