@@ -12,21 +12,25 @@ namespace RentItNow.configurations
     {
         private readonly RentItNowDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ILoggerFactory _loggerFactory;
+
         public ICustomerRepository Customer { get; set; }
         public IRenterRepository Renter { get; set; }
         public IUserRepository User { get; set; }
         public IItemRepository Item { get; set; }
         public IRentalItemRepository RentalItem { get; set; }
-        public UnitOfWork(RentItNowDbContext context, IMapper mapper, UserManager<User> userManager, SignInManager<User> signInManager)
+        public IRentalOptionRepository RentalOption { get; set; }
+        public UnitOfWork(RentItNowDbContext context, IMapper mapper, UserManager<User> userManager, SignInManager<User> signInManager, ILoggerFactory loggerFactory)
         {
             _context = context;
             _mapper = mapper;
-            Customer = new CustomerRepository(context);
-            Renter = new RenterRepository(context);
-            User = new UserRepository(context, userManager,signInManager);
-            Item = new ItemRepository(context);
-            RentalItem = new RentalItemRepository(context);
-
+            Customer = new CustomerRepository(context,loggerFactory.CreateLogger<GenericRepository<Customer>>());
+            Renter = new RenterRepository(context, loggerFactory.CreateLogger<GenericRepository<Renter>>());
+            User = new UserRepository(context, userManager, signInManager, loggerFactory.CreateLogger<GenericRepository<User>>());
+            Item = new ItemRepository(context, loggerFactory.CreateLogger<GenericRepository<Item>>());
+            RentalItem = new RentalItemRepository(context, loggerFactory.CreateLogger<GenericRepository<RentalItem>>());
+            RentalOption = new RentalOptionRepository(context, loggerFactory.CreateLogger<GenericRepository<RentalOption>>());
+            _loggerFactory = loggerFactory;
         }
         public async Task CompleteAsync()
         {

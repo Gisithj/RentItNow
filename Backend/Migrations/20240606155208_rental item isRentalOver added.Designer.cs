@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RentItNow.Data;
 
@@ -11,9 +12,10 @@ using RentItNow.Data;
 namespace RentItNow.Migrations
 {
     [DbContext(typeof(RentItNowDbContext))]
-    partial class RentItNowDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240606155208_rental item isRentalOver added")]
+    partial class rentalitemisRentalOveradded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -231,9 +233,6 @@ namespace RentItNow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("RentalStatus")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("RenterId")
                         .HasColumnType("uniqueidentifier");
 
@@ -297,29 +296,23 @@ namespace RentItNow.Migrations
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Hours")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("ItemID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("RentalEndDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("RentalEndDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("RentalOptionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("RentalStartDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("RentalStartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("RenterId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("isRentOver")
                         .HasColumnType("bit");
-
-                    b.Property<int>("rentalStatus")
-                        .HasColumnType("int");
 
                     b.HasKey("RentalId");
 

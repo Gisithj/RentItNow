@@ -71,6 +71,13 @@ namespace RentItNow.Services
             return items;
         }
 
+        public async Task<IEnumerable<Item>> GetAllItemsWithIncludePagedAsync(int pageNumber, int pageSize)
+        {
+            var items = await _unitOfWork.Item.GetOffSetPaginationAsync(pageNumber, pageSize, i => i.ImageURLs, i => i.RentalOptions);
+
+            return items;
+        }
+
         public async Task<Item> GetItemByIdWithInclude(Guid id)
         {
             var item = await _unitOfWork.Item.GetItemWithIncludeByIdAsync(id);
@@ -82,13 +89,21 @@ namespace RentItNow.Services
         }
         public async Task DeleteItem (Guid id)
         {
-            var item = await _unitOfWork.Item.GetByIdAsync(id);
-            if (item == null)
+            try
             {
+                var item = await _unitOfWork.Item.GetByIdAsync(id);
+                if (item == null)
+                {
+                    throw new Exception("Item not found");
+                }
+                await _unitOfWork.Item.DeleteAsync(id);
+                await _unitOfWork.CompleteAsync();
+            }
+            catch (Exception e)
+            {
+
                 throw new Exception("Item not found");
             }
-            await _unitOfWork.Item.DeleteAsync(id);
-            await _unitOfWork.CompleteAsync();
         }
 
         public async Task<IEnumerable<Item>> GetAllItemsByRenterWithInclude(Guid renterId)
@@ -100,5 +115,16 @@ namespace RentItNow.Services
             }
             return items;
         }
+
+        public async Task<IEnumerable<Item>> GetAllAvailableItemsByDateRangeWithInclude(DateTimeOffset rentalStartDate, DateTimeOffset rentalEndDate, int pageNumber, int pageSize)
+        {
+            var items = await _unitOfWork.Item.GetAllAvailableItemsByDateRangeWithInclude(rentalStartDate, rentalEndDate, pageNumber, pageSize);
+            if (items == null || items.Count() == 0)
+            {
+                throw new Exception("Items not found");
+            }
+            return items;
+        }
+
     }
 }

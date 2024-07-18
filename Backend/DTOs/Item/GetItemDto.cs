@@ -11,6 +11,7 @@ namespace RentItNow.DTOs.Item
         public string ItemDescription { get; set; } = string.Empty;
         public int RentalPrice { get; set; }
         public Boolean IsRented { get; set; }
+        public string RentalStatus { get; set; } = string.Empty;
 
         public Guid RenterId { get; set; }
     }

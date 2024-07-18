@@ -8,7 +8,7 @@ namespace RentItNow.Repositories
 {
     public class CustomerRepository : GenericRepository<Customer>, ICustomerRepository
     {
-        public CustomerRepository(RentItNowDbContext context) : base(context)
+        public CustomerRepository(RentItNowDbContext context, ILogger<GenericRepository<Customer>> logger) : base(context,logger)
         {
         }
 
