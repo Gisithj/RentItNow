@@ -26,6 +26,7 @@ function Sidebar() {
        <div className="w-full max-w-[260px] border-small px-1 py-2 rounded-small border-default-200 dark:border-default-100">
             <Listbox variant="flat" aria-label="Listbox menu with sections">
                 <ListboxItem
+                    id='sidebar_home'
                     key="Home"
                     onPress={()=>handleSidebarTabClick('home')}
                     >
@@ -33,12 +34,14 @@ function Sidebar() {
                 </ListboxItem>
               
                 <ListboxItem
+                    id='sidebar_manage_listings'
                     key="manage-listings"
                     onPress={()=>handleSidebarTabClick('manage-listings')}
                     >
                     Manage listings
                 </ListboxItem>
                 <ListboxItem
+                    id='sidebar_rental_requests'
                     key="rental-requests"
                     onPress={()=>handleSidebarTabClick('rental-requests')}
                     >
@@ -46,6 +49,7 @@ function Sidebar() {
                 </ListboxItem>
               
                 <ListboxItem
+                    id='sidebar_settings'
                     key="settings"
                     onPress={()=>handleSidebarTabClick('settings')}
                   //  startContent={<DeleteDocumentIcon className={cn(iconClasses, "text-danger")} />}

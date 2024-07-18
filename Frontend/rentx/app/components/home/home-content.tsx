@@ -11,8 +11,8 @@ function HomeContent() {
     <div className='px-4 md:px-20 lg:px-44 py-4 md:py-10 flex flex-col gap-10'>      
       <HeroCarousel/>
       <LatestListings/>
-      <FeaturesItems/>
-      <PopularCategories/>      
+      {/* <FeaturesItems/>
+      <PopularCategories/>       */}
     </div>
   )
 }

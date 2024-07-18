@@ -79,3 +79,32 @@
     text-wrap: balance;
   }
 }
+/* For WebKit browsers */
+::-webkit-scrollbar {
+  width: 12px; /* width of the entire scrollbar */
+  margin-left: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(51, 51, 51);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #707070; /* color of the scroll thumb */
+  border-radius: 6px; /* roundness of the scroll thumb */
+  border: 3px solid #ffffff00; /* creates padding around scroll thumb */
+}
+
+/* Light theme styles */
+html.light ::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Lighter track color for light theme */
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background-color: #555; /* Darker thumb color for better contrast in light theme */
+  border: 3px solid #ffffff00;
+}
+html{
+  scrollbar-gutter: stable;
+}
