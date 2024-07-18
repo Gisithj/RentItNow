@@ -6,9 +6,13 @@ namespace RentItNow.Services
 {
     public interface IRentalItemService    {
 
+        public Task<IEnumerable<RentalItem>?> GetAllRentalItems();
+        public Task<IEnumerable<RentalItem>> GetAllRentedItemsByRenterWithIncludeAsync(Guid renterId);
+        public Task<bool> RentItemAsync(RentalItem rentalItem);
+        public Task EndRentItemAsync(Guid itemId, Guid rentalItemId);
 
-        public Task RentItemAsync(RentalItem rentalItem);
-
-      
+        public void DeleteRentalItemsBytItemId(Guid itemId);
+        public Task<bool> IsAvailableForRent(Guid itemId, DateTimeOffset startDate, DateTimeOffset endDate);
+        public Task UpdateRentalItem(IEnumerable<RentalItem> rentalItems);
     }
 }

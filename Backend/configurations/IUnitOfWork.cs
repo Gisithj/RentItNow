@@ -9,6 +9,7 @@ namespace RentItNow.configurations
         IUserRepository User { get; set; }
         IItemRepository Item { get; set; }
         IRentalItemRepository RentalItem { get; set; }
+        IRentalOptionRepository RentalOption { get; set; }
         Task CompleteAsync();
         void Dispose();
     }

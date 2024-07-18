@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentItNow.configurations;
 using RentItNow.Data;
+using RentItNow.DTOs;
 using RentItNow.DTOs.Customer;
 using RentItNow.DTOs.Item;
 using RentItNow.Models;
@@ -79,6 +80,24 @@ namespace RentItNow.Controllers
             }
         }
 
+        [HttpGet("GetAllAvailableItemsByDateRange")]
+        public async Task<ActionResult<IEnumerable<ItemDto>>> GetAllAvailableItemsByDateRangeWithInclude(int pageNumber, int pageSize, DateTimeOffset rentalStartDate,DateTimeOffset rentalEndDate)
+        {
+            try
+            {
+                var allitems = await _itemService.GetAllAvailableItemsByDateRangeWithInclude(rentalStartDate, rentalEndDate, pageNumber, pageSize);
+                var itemDtos = _mapper.Map<IEnumerable<ItemDto>>(allitems).ToList();
+
+
+                return itemDtos;
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
         [HttpGet("WithInclude")]
         public async Task<ActionResult<IEnumerable<ItemDto>>> GetItemsWithInclude()
         {
@@ -97,6 +116,22 @@ namespace RentItNow.Controllers
             }
         }
 
+        [HttpGet("GetWithOffsetPagination")]
+        public async Task<ActionResult<IEnumerable<ItemDto>>> GetWithOffsetPagination(int pageNumber,int pageSize)
+        {
+            try
+            {
+                var items = await _itemService.GetAllItemsWithIncludePagedAsync(pageNumber, pageSize);
+                var itemDtos = _mapper.Map<IEnumerable<ItemDto>>(items).ToList();
+                return itemDtos;
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
         [HttpGet("ItemsByRenter/{renterId}")]
         public async Task<ActionResult<IEnumerable<ItemDto>>> GetItemsByRenterWithInclude(Guid renterId)
         {
@@ -104,6 +139,23 @@ namespace RentItNow.Controllers
             {
                 var allitems = await _itemService.GetAllItemsByRenterWithInclude(renterId);
                 var itemDtos = _mapper.Map<IEnumerable<ItemDto>>(allitems).ToList();
+                return itemDtos;
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("RentedItemsByRenter/{renterId}")]
+        public async Task<ActionResult<IEnumerable<RentItemDto>>> GetRentedItemsByRenterWithInclude(Guid renterId)
+        {
+            try
+            {
+                //var allitems = await _itemService.GetAllRentedItemsByRenterWithInclude(renterId);
+                var allItems = await _rentalItemService.GetAllRentedItemsByRenterWithIncludeAsync(renterId);
+                var itemDtos = _mapper.Map<IEnumerable<RentItemDto>>(allItems).ToList();
                 return itemDtos;
             }
             catch (Exception ex)
@@ -177,6 +229,7 @@ namespace RentItNow.Controllers
         {    
             try
             {
+                _rentalItemService.DeleteRentalItemsBytItemId(id);
                 await _itemService.DeleteItem(id);
                 return Ok("Item deleted");
             }
@@ -187,7 +240,7 @@ namespace RentItNow.Controllers
             }
         }
 
-        [HttpPost("/RentItem")]
+        [HttpPost("RentItem")]
         public async Task<ActionResult<RentItemDto>> RentItem(RentItemDto rentItemDto)
         {
             try
@@ -196,6 +249,41 @@ namespace RentItNow.Controllers
                 await _rentalItemService.RentItemAsync(rentalItem);
                 return rentItemDto;
        
+
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("IsItemAvailable")]
+        public async Task<ActionResult<bool>> IsItemAvailable(Guid itemID, DateTimeOffset rentalStartDate, DateTimeOffset rentalEndDate)
+        {
+            try
+            {
+                var isAvailable = await _rentalItemService.IsAvailableForRent(itemID,rentalStartDate, rentalEndDate);
+                
+                return isAvailable;
+
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpPost("EndRentItem")]
+        public async Task<ActionResult<EndRentDto>> EndRent(EndRentDto endRentDto)
+        {
+            try
+            {
+
+                await _rentalItemService.EndRentItemAsync(endRentDto.ItemId,endRentDto.RentalItemId);
+                return endRentDto;
+
 
             }
             catch (Exception ex)

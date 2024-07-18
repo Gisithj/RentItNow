@@ -13,7 +13,7 @@ namespace RentItNow.Repositories
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
-        public UserRepository(RentItNowDbContext context, UserManager<User> userManager, SignInManager<User> signInManager) : base(context)
+        public UserRepository(RentItNowDbContext context, UserManager<User> userManager, SignInManager<User> signInManager,ILogger<GenericRepository<User>> logger) : base(context, logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;

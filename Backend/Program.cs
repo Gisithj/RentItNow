@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RentItNow.BackgroundServices;
 using RentItNow.configurations;
 using RentItNow.Data;
 using RentItNow.Helpers;
@@ -38,7 +39,7 @@ internal class Program
 
         });
 
-
+        builder.Services.AddHostedService<RentalStartEndService>();
         builder.Services.AddSwaggerGen();
         builder.Services.AddIdentity<User, IdentityRole>()
         .AddEntityFrameworkStores<RentItNowDbContext>()
@@ -87,10 +88,13 @@ internal class Program
         builder.Services.AddScoped<UserManager<User>>();
         builder.Services.AddScoped<SignInManager<User>>();
         builder.Services.AddScoped<IUserClaimsPrincipalFactory<User>, UserClaimsPrincipalFactory<User, IdentityRole>>();
-        
+
+
         builder.Services.AddScoped<IRentalItemService,RentalItemService>();
         builder.Services.AddScoped<IItemService, ItemService>();
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        builder.Services.AddScoped<RentalStartEndService>();
         builder.Services.AddScoped<JwtTokenHelper>();
         var app = builder.Build();
 

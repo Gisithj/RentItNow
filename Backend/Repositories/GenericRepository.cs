@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RentItNow.Data;
 using RentItNow.Interfaces;
 using System.Linq.Expressions;
@@ -12,12 +13,12 @@ namespace RentItNow.Repositories
     {
         protected RentItNowDbContext _context;
         internal DbSet<T> dbSet;
-
-        public GenericRepository(RentItNowDbContext context)
+        protected readonly ILogger<GenericRepository<T>> _logger;
+        public GenericRepository(RentItNowDbContext context, ILogger<GenericRepository<T>> logger)
         {
             _context = context;
             dbSet = context.Set<T>();
-
+            _logger = logger;
         }
 
         public virtual async Task<IEnumerable<T>?> GetAllAsync()
@@ -38,6 +39,49 @@ namespace RentItNow.Repositories
             }
         }
 
+        public virtual async Task<IEnumerable<T>> GetOffSetPaginationAsync(int pageNumber, int pageSize, params Expression<Func<T, object>>[] includes)
+        {
+            try
+            {
+                IQueryable<T> query = dbSet.AsNoTracking();
+
+                // Apply includes
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
+
+                // Apply pagination
+                var entities = await query
+                                    .Skip((pageNumber - 1) * pageSize)
+                                    .Take(pageSize)
+                                    .ToListAsync();
+
+                return entities;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public virtual async Task<IEnumerable<T>> GetOffSetPaginationAsync(int pageNumber, int pageSize, IQueryable<T> query)
+        {
+            try
+            {
+                // Apply pagination
+                var entities = await query
+                   .Skip((pageNumber - 1) * pageSize)
+                   .Take(pageSize)
+                   .ToListAsync();
+
+                return entities;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
         public virtual async Task<T> GetByIdAsync(Guid id)
         {
             try

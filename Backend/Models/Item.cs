@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using RentItNow.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RentItNow.Models
@@ -16,7 +17,8 @@ namespace RentItNow.Models
         public ICollection<ItemSpecification> Specifications { get; set; } = null!;
         public ICollection<ItemImage>? ImageURLs { get; set; }
         public Boolean IsRented { get; set; }
-        public ICollection<RentalItem>? RentalItem { get; set; } 
+        public RentalStatus RentalStatus { get; set; } = RentalStatus.Available;
+        public ICollection<RentalItem> RentalItem { get; set; } = new List<RentalItem>();
         public Guid RenterId { get; set; }  
         public Renter Renter { get; set; } = null!;
     }

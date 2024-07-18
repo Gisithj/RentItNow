@@ -14,10 +14,10 @@ namespace RentItNow.Services
         public Task<Item> UpdateItem(UpdateItemDto item);
         public Task<IEnumerable<Item>> GetAllItems();
         public Task DeleteItem(Guid id);
-
         public Task<IEnumerable<Item>> GetAllItemsWithInclude();
         public Task<IEnumerable<Item>> GetAllItemsByRenterWithInclude(Guid renterId);
-
+        public Task<IEnumerable<Item>> GetAllItemsWithIncludePagedAsync(int pageNumber,int pageSize);
         public Task<Item> GetItemByIdWithInclude(Guid id);
+        public Task<IEnumerable<Item>> GetAllAvailableItemsByDateRangeWithInclude(DateTimeOffset rentalStartDate, DateTimeOffset rentalEndDate, int pageNumber, int pageSize);
     }
 }

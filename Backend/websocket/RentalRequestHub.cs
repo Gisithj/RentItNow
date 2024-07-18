@@ -74,23 +74,38 @@ namespace RentItNow.websocket
 
         public async Task SendRentalRequestToRenter(Guid itemId, Guid customerId)
         {
-            // Query the database to find the Item
-            var item = await _itemService.GetItemById(itemId);
-
-            if (item != null)
+            try
             {
-                // Get the RenterId from the Item
-                var renterId = item.RenterId;
-                var rentc = RenterConnections;
-                Boolean rentCId = RenterConnections.TryGetValue(renterId, out var a);
-                if (RenterConnections.TryGetValue(renterId, out var connectionId))
-                {
-                    // Create a message to send to the Renter
-                    var message = $"Customer {customerId} has requested to rent your item {itemId}";
 
-                    // Send the message to the specific Renter
-                    await Clients.Client(connectionId).SendOffersToUser(message);
+                Console.WriteLine("SendRentalRequestToRenter");
+                Console.WriteLine(itemId);
+                Console.WriteLine(customerId);
+                // Query the database to find the Item
+                var item = await _itemService.GetItemById(itemId);
+
+                if (item != null)
+                {
+                    // Get the RenterId from the Item
+                    var renterId = item.RenterId;
+                    var rentc = RenterConnections;
+                    Boolean rentCId = RenterConnections.TryGetValue(renterId, out var a);
+                    if (RenterConnections.TryGetValue(renterId, out var connectionId))
+                    {
+                        // Create a message to send to the Renter
+                        var message = $"Customer {customerId} has requested to rent your item {itemId}";
+
+                        // Send the message to the specific Renter
+                        await Clients.Client(connectionId).SendOffersToUser(message);
+                    }
+                }else
+                {
+                    Console.WriteLine("Item not found");
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
             }
         }
 

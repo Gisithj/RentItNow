@@ -9,10 +9,9 @@ namespace RentItNow.Repositories
 {
     public class ItemRepository : GenericRepository<Item>, IItemRepository
     {
-        
-        public ItemRepository(RentItNowDbContext context) : base(context)
+        public ItemRepository(RentItNowDbContext context, ILogger<GenericRepository<Item>> logger) : base(context, logger)
         {
-
+        
         }
 
         public async Task<Item> GetItemWithIncludeByIdAsync(Guid id)
@@ -45,7 +44,7 @@ namespace RentItNow.Repositories
             try
             {
                 var items = await dbSet
-                                .Include(i => i.ImageURLs.Take(1))
+                                .Include(i => i.ImageURLs)
                                 .Include(i => i.RentalOptions)
                                 .ToListAsync();
                 if (items == null || items.Count() == 0)
@@ -84,7 +83,45 @@ namespace RentItNow.Repositories
             }
 
         }
-        
+
+        public async Task<IEnumerable<Item>> GetAllAvailableItemsByDateRangeWithInclude(
+            DateTimeOffset rentalStartDate, 
+            DateTimeOffset rentalEndDate,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                _logger.LogInformation("rentalStartDate {rentalStartDate}", rentalStartDate);
+                var query = dbSet
+                       .Include(i => i.ImageURLs)
+                       .Include(i => i.RentalOptions)
+                       .Where(i => !i.RentalItem.Any(ri =>
+                           ri.RentalStartDate <= rentalEndDate && ri.RentalEndDate >= rentalStartDate))
+                       .Distinct()
+                       .AsQueryable();
+
+
+                _logger.LogInformation("query {query}", query.ToQueryString());
+                var items = await GetOffSetPaginationAsync(pageNumber, pageSize, query);
+
+                if (items == null || !items.Any())
+                {
+                    throw new Exception("No available items found for the given date range.");
+                }
+
+                return items;
+            }
+            catch (Exception e)
+            {
+
+                throw new Exception(e.Message);
+            }
+        }
+
+
+
+
 
     }
 }
