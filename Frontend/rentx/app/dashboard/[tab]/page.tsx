@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux'
 //import { useRouter } from 'next/router'
 import Home from '../components/home'
 import NewListing from '../components/manage-listing/new-listing'
+import ProfileSettings from '@/app/profile-settings/page'
 
 function Dashboard({ params }: { params: { tab: string } }) {
   const { tab } = useParams();
@@ -70,7 +71,7 @@ function Dashboard({ params }: { params: { tab: string } }) {
           //<ManageListings handleNewListingClick={handleNewListingClick} handleEditListingClick={handleEditListingClick}/>
           <ManageListings />
           :tab.includes('setting') ?
-          <Settings/>
+          <ProfileSettings/>
           :tab.includes('home')?
           <Home/>
           :

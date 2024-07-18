@@ -79,13 +79,20 @@ export const LOGOUT = async ()=> {
   export const CHECK_AUTH = async ()=> {
     try {
       const token = localStorage.getItem('token'); // Retrieve token from local storage
+      if(!token) return null;
+      console.log(token);
+      
       const config = {
         headers: {
           Authorization: `Bearer ${token}`, // Include token in Authorization header
         },
       };      
       const response = await api.get('/Auth/auth-check',config); // Your API endpoint
-      return response;
+      if(response.status === 200 || response.status === 201){
+        return response;
+      }else{
+        return null;
+      }
     } catch (error) {
         console.log(error);
     }

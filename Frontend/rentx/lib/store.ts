@@ -46,11 +46,15 @@ import { combineSlices, configureStore } from "@reduxjs/toolkit";
 import {authSlice} from "./features/authSlice";
 import {navbarSlice} from "./features/navbarSlice";
 import {sidebarSlice} from "./features/sidebarSlice";
+import {updateTriggerSlice} from "./features/updateTriggerSlice";
+import {filterSlice} from "./features/filterSlice";
 
 const rootReducer = combineSlices(
     authSlice,
     navbarSlice,
-    sidebarSlice
+    sidebarSlice,
+    updateTriggerSlice,
+    filterSlice
 );
 export type RootState = ReturnType<typeof rootReducer>;
 

@@ -51,6 +51,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
   const [itemOverview, setItemOverview] = useState("");
   const [isItemLoadingStarted, setIsItemLoadingStarted] = useState(false);
   const [isItemLoaded,setIsItemLoaded] = useState(false);
+  const [isError,setIsError] = useState(false);
   //const [valueHouseNo, setValuePassword] = useState("");
   // const dispatch = useAppDispatch()
   const user = useSelector((state: RootState) => state.auth.user);
@@ -112,7 +113,6 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
       value: "Cleaning",
     }
   ];
-
 
   //fetch the item details if in edit mode
   useEffect(() => {
@@ -194,45 +194,55 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
   };
 
   const handleUploadImages = async () => {
-    setIsItemLoadingStarted(true);
+    
     //upload the images to AZURE
-    const imageUrls = await handleUpload(selectedImages);
+    
 
-    if(isInEditMode){
-      //call the update item API
-      const updatedItem = {
-        itemId:itemId!,
-        itemName: valueItemName,
-        itemDescription: description,
-        category:selectedCategory,
-        rentalOptions: rentalOptions,
-        specifications: features,
-        imageURLs: imageUrls,
-        isRented: false,
-        itemOverview: itemOverview,
-        renterId: user?.roleId!
-      };
-      console.log(updatedItem);
-    const responseData = UPDATE_ITEM(updatedItem).finally(()=>{
-      setIsItemLoadingStarted(false);
-    });
-    }else{
-      //call the create item API
-      const newItem = {
-        itemName: valueItemName,
-        itemDescription: description,
-        category:selectedCategory,
-        rentalOptions: rentalOptions,
-        specifications: features,
-        imageURLs: imageUrls,
-        isRented: false,
-        itemOverview: itemOverview,
-        renterId: user?.roleId!
-      };
-      console.log(newItem);
-      const responseData = CREATE_ITEM(newItem).finally(()=>{
+    if(!(selectedImages.length == 0) && !(rentOptions.length === 0) && !(features.length === 0)){
+      console.log("in here all fields are filled");
+      
+      onOpen();
+      const imageUrls = await handleUpload(selectedImages);
+      setIsItemLoadingStarted(true);
+      if(isInEditMode){
+        //call the update item API
+        const updatedItem = {
+          itemId:itemId!,
+          itemName: valueItemName,
+          itemDescription: description,
+          category:selectedCategory,
+          rentalOptions: rentalOptions,
+          specifications: features,
+          imageURLs: imageUrls,
+          isRented: false,
+          itemOverview: itemOverview,
+          renterId: user?.roleId!
+        };
+        console.log(updatedItem);
+      const responseData = UPDATE_ITEM(updatedItem).finally(()=>{
         setIsItemLoadingStarted(false);
       });
+      }else{
+        //call the create item API
+        const newItem = {
+          itemName: valueItemName,
+          itemDescription: description,
+          category:selectedCategory,
+          rentalOptions: rentalOptions,
+          specifications: features,
+          imageURLs: imageUrls,
+          isRented: false,
+          itemOverview: itemOverview,
+          renterId: user?.roleId!
+        };
+        console.log(newItem);
+        const responseData = CREATE_ITEM(newItem).finally(()=>{
+          setIsItemLoadingStarted(false);
+        });
+      }
+    }else{
+      
+      setIsError(true);
     }
     
   };
@@ -257,6 +267,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
         <form action="" className="flex flex-row gap-4 w-full">
           <div className="flex flex-col gap-4 w-1/2">
             <Input
+              id="item_name"
               type="text"
               variant={"bordered"}
               label="Item name"
@@ -287,16 +298,19 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                   </Select>
                 :
                 <Select
+                    id="category"
                     size="sm"
                     label="Select a category"
                     className="min-[400px]"
                     selectionMode="single"
+                    isRequired
                     onChange={(event) =>
                       setSelectedCategory(event.target.value)
                     }
                   >
                     {categories.map((category) => (
                       <SelectItem
+                        id={`category_item_${category.value}`}
                         key={category.value}
                         value={category.value}
                       >
@@ -305,6 +319,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                     ))}
                   </Select>}
             <Textarea
+              id="item_desctiption"
               label="Description"
               placeholder="Enter breif description about the item (no more than two rows)"
               className="w-full"
@@ -312,14 +327,17 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
               onValueChange={setDescription}
               maxRows={2}
               disableAutosize={true}
+              isRequired
             />
             <Textarea
+              id="item_overview"
               label="Description"
               placeholder="Enter item overview"
               className="w-full"
               maxRows = {8}
               value={itemOverview}
               onValueChange={setItemOverview}
+              isRequired
             />
             <div className="flex flex-col gap-4 border-small px-4 py-4 rounded-small border-default-200 dark:border-default-100">
               <h1 className="text-sm font-semibold">Rent options details</h1>
@@ -335,6 +353,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                       defaultValue="Rent per hour"
                       value={option.rentalOptionName}
                       className="max-w-xs"
+                      isRequired
                     />
                     <Input
                       isReadOnly
@@ -345,6 +364,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                       defaultValue="0"
                       value={option.price.toString()}
                       className="max-w-xs"
+                      isRequired
                     />
                     <Button
                       isIconOnly
@@ -361,6 +381,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
               {rentalOptions.length < 4 && (
                 <div className="flex flex-row gap-2 items-center">
                   <Select
+                    id="rent_option"
                     size="sm"
                     label="Select a rent option"
                     className="min-[400px]"
@@ -370,9 +391,11 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                     onChange={(event) =>
                       setSelectedRentOption(event.target.value)
                     }
+                    isRequired
                   >
                     {rentOptions.map((rentOption) => (
                       <SelectItem
+                        id={`rent_option_${rentOption.value}`}
                         key={rentOption.value}
                         value={rentOption.value}
                       >
@@ -381,6 +404,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                     ))}
                   </Select>
                   <Input
+                    id="rent_price"
                     type="text"
                     variant={"bordered"}
                     label="Rental"
@@ -392,6 +416,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                     isRequired
                   />
                   <Button
+                    id="add_rent_option"
                     isIconOnly
                     size="sm"
                     variant="light"
@@ -409,6 +434,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                 {features.map((feature, index) => (
                   <div className="flex flex-row gap-2 items-center" key={index}>
                     <Input
+                      id="specification_feature"
                       isReadOnly
                       size="sm"
                       type="text"
@@ -419,6 +445,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                       className="max-w-xs"
                     />
                     <Input
+                      id="feature_detail"
                       isReadOnly
                       size="sm"
                       type="text"
@@ -429,6 +456,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                       className="max-w-xs"
                     />
                     <Button
+                      id="remove_feature"
                       isIconOnly
                       size="sm"
                       variant="light"
@@ -442,6 +470,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
               </div>
               <div className="flex flex-row gap-2 items-center">
                 <Input
+                  id="feature_name"
                   type="text"
                   variant={"bordered"}
                   label="Feature detail"
@@ -451,6 +480,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                   isRequired
                 />
                 <Input
+                  id="feature_value"
                   type="text"
                   variant={"bordered"}
                   label="Feature detail"
@@ -460,6 +490,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                   isRequired
                 />
                 <Button
+                  id="add_feature"
                   isIconOnly
                   size="sm"
                   variant="light"
@@ -471,15 +502,16 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
               </div>
               
             </div>
-            <div>
+            <div className="flex flex-row gap-4 items-center">
                 <Button
+                  id="add_listing"
                   variant="solid"
                   size="md"
                   color="primary"
-                  onPress={()=>{onOpen()}}
-                  onClick={handleUploadImages}
+                  onPress={handleUploadImages}
                 >
                   {isInEditMode?'Update listing':'Add Listing'}</Button>
+                {isError?<h1 className="text-sm text-danger">Please fill all the required fields</h1>:<></>}
               </div>
           </div>
           <div className="w-1/2">
@@ -507,7 +539,7 @@ function NewListing({ isInEditMode,itemId,handleNewListingClick }: NewListingPro
                
               </ModalBody>
               <ModalFooter className="flex flex-col items-center text-center">
-                <Button color="primary" variant="solid" onPress={()=>router.back()}>
+                <Button id="return_to_listings_button" color="primary" variant="solid" onPress={()=>router.back()}>
                   Return to listings
                 </Button>
               </ModalFooter>
