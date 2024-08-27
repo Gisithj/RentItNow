@@ -13,7 +13,7 @@ type PropType = {
 };
 
 const ItemCardCarousel = ({slides,isItemCardCaroselHovered,itemId,hoverdItemId}:PropType) => {
-
+    const [isImageNotLoaded, setIsImageNotLoaded] = useState(false)
     // if(hoverdItemId==itemId){}
     const options: EmblaOptionsType = { loop: true }
     const [emblaRef, emblaApi] = useEmblaCarousel(options, [
@@ -39,7 +39,9 @@ const ItemCardCarousel = ({slides,isItemCardCaroselHovered,itemId,hoverdItemId}:
   //     .on('autoplay:stop' as any, () => setIsPlaying(false))
   //     .on('reInit', () => setIsPlaying(autoplay && autoplay.isPlaying()))
   // }, [emblaApi])
-
+  const handleImageLoadError = () =>{
+    setIsImageNotLoaded(true);
+  }
   useEffect(()=>{
     const autoplay:any = emblaApi && emblaApi.plugins().autoplay;
     if(itemId===hoverdItemId){
@@ -56,15 +58,22 @@ const ItemCardCarousel = ({slides,isItemCardCaroselHovered,itemId,hoverdItemId}:
         <div className="embla__container flex">
           {slides.map((img,index) => (
             <div className="embla__slide flex-none flex-shrink-0 flex-grow-0 w-full max-h-[400px] min-w-0" key={index}>
-              
+              {isImageNotLoaded ? 
+              <div className="flex place-items-center place-content-center h-[14rem] w-[100] bg-default-100">Error in image loading</div>
+              :
               <Image
                 shadow="sm"
                 radius="lg"
-                width="100%"
+                //width="100%"
+                height="100%"
                 alt={"item image"}
-                className="w-full object-cover rounded-none"
+                className="h-[14rem] object-cover rounded-none"
                 src={img}
+                fallbackSrc="assets/images/fruit-2.jpeg"
+                onError={handleImageLoadError}
+                onLoad={()=>setIsImageNotLoaded(false)}
               />
+    }
             </div>
           ))}
         </div>

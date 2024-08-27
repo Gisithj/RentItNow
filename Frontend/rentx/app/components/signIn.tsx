@@ -84,7 +84,7 @@ function SignIn({onClose}:{onClose:()=>void}) {
   }
   return (
       <div className='flex flex-col items-center gap-10 justify-center'>
-        <div className='flex flex-col items-center gap-10 shadow-lg w-fit px-4 py-10 rounded-2xl h-full'>
+        <div className='flex flex-col items-center gap-10 w-fit px-4 py-10 rounded-2xl h-full'>
           <div>
             <h1 className='text-2xl font-bold'>Welcome Back</h1>
           </div>

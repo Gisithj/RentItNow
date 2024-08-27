@@ -58,6 +58,24 @@ export const GET_RENTED_ITEMS_BY_RENTER_WITH_INCLUDE = async (renterId: string) 
   }
 };
 
+export const GET_ALL_RENTAL_ITEMS_BY_CUSTOMER_ID = async (customerId: string) => {
+  try {
+    const response = await api.get(`/Items/GetAllRentalItemByCustomerId/${customerId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching item with id ${customerId}:`, error);
+  }
+
+}
+export const GET_RENTAL_ITEMS_BY_RENTAL_ID = async (rentalId: string) => {
+  try {
+    const response = await api.get(`/Items/GetRentalItemById/${rentalId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching item with id ${rentalId}:`, error);
+  }
+
+}
 export const CREATE_ITEM = async (item: Item) => {
   try {
     console.log("in herer");
@@ -127,6 +145,7 @@ export const RENT_ITEM = async (rentItem: RentItem) => {
     return response.data;
   } catch (error) {
     console.error(`Error renting item with id ${rentItem.itemId}:`, error);
+    throw error;
   }
 };
 export const END_RENT_ITEM = async (itemId: string,rentItemId:string) => {

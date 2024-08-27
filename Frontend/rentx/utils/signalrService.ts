@@ -4,23 +4,20 @@ let connection = new HubConnectionBuilder()
     .withUrl("https://localhost:44375/chat", { withCredentials: true })
     .build();
 
-const startConnection = () => connection.start()
-    .then(() => console.log("connected"))
+const startConnection = async () => connection.start()
+    .then(() => {
+        console.log("connected");
+        return connection.connectionId;
+    })
     .catch(err => console.error(err.toString()));
 
+const getConnectionId = async () => {
+        if (connection.state !== "Connected") {
+            await startConnection();
+        }
+        return connection.connectionId;
+    };
 const stopConnection =  () => connection.stop().catch(err => console.error(err.toString()));
 
-const sendRentalRequestToRenter = (itemId: any, customerId: any) => {
-    if(connection.state === "Connected") {
-        connection.invoke("SendRentalRequestToRenter", itemId,customerId)
-            .catch(err => console.error("Error sending request:", err));
-    } else {
-        console.error("Cannot send data if the connection is not in the 'Connected' State.");
-    }
-}
 
-const subscribeToOffers = (callback: (...args: any[]) => any) => {
-    connection.on("SendOffersToUser", callback);
-}
-
-export { startConnection,stopConnection, sendRentalRequestToRenter, subscribeToOffers, connection };
+export { startConnection,stopConnection,connection,getConnectionId };

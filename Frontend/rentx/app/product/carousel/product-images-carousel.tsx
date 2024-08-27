@@ -9,14 +9,13 @@ interface ProductCarouselProps {
 }
 function ProductCarousel({images}: ProductCarouselProps) {
 
-    const imgList = ["img","img","img","img","img"]
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [emblaMainRef, emblaMainApi] = useEmblaCarousel()
     const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
       containScroll: 'keepSnaps',
       dragFree: true,
     })
-    
+    const [isProductImageNotLoaded, setIsProductImageNotLoaded] = useState(false)
     const onThumbClick = useCallback(
       (index:any) => {
         if (!emblaMainApi || !emblaThumbsApi) return
@@ -63,13 +62,24 @@ function ProductCarousel({images}: ProductCarouselProps) {
       <div className="embla__container flex">
         {images.map((img,index) => (
           <div className="embla__slide max-h-[400px] flex-shrink-0 flex-grow-0 w-full min-w-0 flex justify-center" key={index}>
-            <Image src={img} alt='product' className='max-h-[400px]'/>
+             {isProductImageNotLoaded ? 
+              <div className="flex place-items-center place-content-center h-[400px] w-[100%] bg-default-100">Error in image loading</div>
+              :
+            <Image 
+              src={img} 
+              alt='product' 
+              className='max-h-[400px]' 
+              fallbackSrc="assets/images/fruit-2.jpeg"
+              onError={()=>setIsProductImageNotLoaded(true)}
+              onLoad={()=>setIsProductImageNotLoaded(false)}
+              />
+             }
           </div>
         ))}
       </div>
     </div>
 
-    <div className="embla-thumbs ">
+    {!isProductImageNotLoaded && <div className="embla-thumbs ">
       <div className="embla-thumbs__viewport overflow-hidden" ref={emblaThumbsRef}>
         <div className="embla-thumbs__container flex flex-row gap-2 justify-center">
           {images.map((img,index) => (
@@ -83,7 +93,7 @@ function ProductCarousel({images}: ProductCarouselProps) {
           ))}
         </div>
       </div>
-    </div>
+    </div>}
 
     
     {/* <div className="embla__controls grid grid-cols-2 justify-between mt-2">
