@@ -11,9 +11,12 @@ namespace RentItNow.Models
         public Guid RentalId { get; set; }
         public DateTimeOffset RentalStartDate { get; set; }
         public DateTimeOffset RentalEndDate { get; set; }
+        public int rentalPrice { get; set; }
+        public Boolean isOverdue { get; set; } = false;
+        public int overdueDays { get; set; } = 0;
         public int Hours { get; set; }  = 0;
         public Boolean isRentOver { get; set; } = false;
-        public RentalStatus rentalStatus { get; set; } = RentalStatus.Available;
+        public RentalStatus RentalStatus { get; set; } = RentalStatus.Available;
         public Guid RentalOptionId { get; set; }
         public Guid CustomerId { get; set; }
         public Customer Customer { get; set; } = null!;

@@ -1,26 +1,48 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol.Plugins;
+using RentItNow.DTOs.Message;
+using RentItNow.Enums;
+using RentItNow.Models;
 using RentItNow.Services;
+using System;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace RentItNow.websocket
 {
     
     public class RentalRequestHub:Hub<IMessageClient>
     {
-        private readonly IItemService _itemService;
+        private readonly IMapper _mapper;
+        private readonly IMessageService _messageService;
+        private readonly INotificationService _notificationService;
+        private readonly IChatService _chatService;
+        private readonly UserManager<User> _userManager;
 
-        public RentalRequestHub(IItemService itemService)
+
+        public RentalRequestHub(
+            IMessageService messageService, 
+            IMapper mapper, 
+            UserManager<User> userManager, 
+            INotificationService notificationService,
+            IChatService chatService)
         {
-            _itemService = itemService;
+            _messageService = messageService;
+            _userManager = userManager;
+            _notificationService = notificationService;
+            _chatService = chatService;
+            _mapper = mapper;
         }
         public async Task SendOffersToUser(string message)
         {
-            await Clients.All.SendOffersToUser(message);
+            //await Clients.All.SendOffersToUser(message);
         }
 
-        private static readonly ConcurrentDictionary<Guid, string> RenterConnections = new ConcurrentDictionary<Guid, string>();
+        private static readonly ConcurrentDictionary<Guid, string> connections = new ConcurrentDictionary<Guid, string>();
         private static readonly ConcurrentDictionary<Guid, string> CustomerConnections = new ConcurrentDictionary<Guid, string>();
 
         public override async Task OnConnectedAsync()
@@ -37,13 +59,9 @@ namespace RentItNow.websocket
             {
                 jwtToken.Claims.ToList().ForEach(claim =>
                 {
-                   if(claim.Type == "renterId")
+                   if(claim.Type == ClaimTypes.NameIdentifier)
                     {
-                        RenterConnections.TryAdd(Guid.Parse(claim.Value), Context.ConnectionId);
-                    }
-                    else if(claim.Type == "customerId")
-                    {
-                        CustomerConnections.TryAdd(Guid.Parse(claim.Value), Context.ConnectionId);
+                        connections.TryAdd(Guid.Parse(claim.Value), Context.ConnectionId);
                     }
                 });
             }
@@ -61,45 +79,72 @@ namespace RentItNow.websocket
             // Validate the token and extract the claims
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
-            var renterIdClaim = jwtToken.Claims.First(claim => claim.Type == "renterId");
+            var userIdClaim = jwtToken.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier);
 
             // Parse the renterId from the claim
-            var renterId = Guid.Parse(renterIdClaim.Value);
+            var userId = Guid.Parse(userIdClaim.Value);
 
             // Remove the mapping when the connection is closed
-            RenterConnections.TryRemove(renterId, out _);
+            connections.TryRemove(userId, out _);
 
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendRentalRequestToRenter(Guid itemId, Guid customerId)
+        public async Task SendPrivateMessage(MessageDto messageDto)
         {
             try
             {
+                var message = _mapper.Map<MessageDto, Messages>(messageDto);
 
-                Console.WriteLine("SendRentalRequestToRenter");
-                Console.WriteLine(itemId);
-                Console.WriteLine(customerId);
-                // Query the database to find the Item
-                var item = await _itemService.GetItemById(itemId);
-
-                if (item != null)
+                // Get the sender and receiver
+                var sender = await _userManager.FindByIdAsync(messageDto.SenderId);
+                var receiver = await _userManager.FindByIdAsync(messageDto.ReceiverId);
+                // Save the message to the database
+                Chat chat = await _chatService.GetChatBySenderAndReceiverId(messageDto.SenderId, messageDto.ReceiverId);
+                if(chat == null)
                 {
-                    // Get the RenterId from the Item
-                    var renterId = item.RenterId;
-                    var rentc = RenterConnections;
-                    Boolean rentCId = RenterConnections.TryGetValue(renterId, out var a);
-                    if (RenterConnections.TryGetValue(renterId, out var connectionId))
+                    var newChat = new Chat()
                     {
-                        // Create a message to send to the Renter
-                        var message = $"Customer {customerId} has requested to rent your item {itemId}";
-
-                        // Send the message to the specific Renter
-                        await Clients.Client(connectionId).SendOffersToUser(message);
-                    }
-                }else
+                        SenderId = messageDto.SenderId,
+                        ReceiverId = messageDto.ReceiverId,
+                        Timestamp = DateTime.UtcNow,
+                        Sender = sender,
+                        Receiver = receiver,
+                    };
+                    chat = await _chatService.CreateChat(newChat);
+                }
+                else
                 {
-                    Console.WriteLine("Item not found");
+
+                }
+
+                message.Timestamp = DateTime.UtcNow;
+                message.ChatId = chat.Id;
+                await _messageService.AddMessage(message);
+                var returnMessageDto = _mapper.Map<Messages, MessageDto>(message);
+                // Determine the recipient's connection ID
+                string connectionId;
+                if (connections.TryGetValue(Guid.Parse(messageDto.ReceiverId), out connectionId))
+                {
+
+                    // Send the message to the specific recipient
+                    await Clients.Client(connectionId).NewMessage(returnMessageDto);
+                    await Clients.Caller.NewMessage(returnMessageDto);
+
+                }
+                else
+                {
+                    Notification newNotification = new Notification()
+                    {
+                        UserId = messageDto.ReceiverId,
+                        SenderId = messageDto.SenderId,
+                        Message = "You have a new message from " + sender.UserName,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _chatService.UpdateUnreadCount(chat.Id,1);
+                    var notification = await _notificationService.AddNotification(newNotification);                    
+                    await Clients.Caller.NewMessage(returnMessageDto);
+
                 }
             }
             catch (Exception e)
@@ -108,6 +153,44 @@ namespace RentItNow.websocket
                 throw;
             }
         }
+        public async Task MessageRead(string receiverId, string senderId) { 
+            try
+            {
+                var messages = await _messageService.MarkAllUnreadMessagesById(senderId, receiverId);
+                Chat chat = await _chatService.GetChatBySenderAndReceiverId(senderId,receiverId);
+                if(chat != null)
+                {
+                    await _chatService.UpdateUnreadCount(chat.Id);
+                }
+                string connectionId;
+                if (connections.TryGetValue(Guid.Parse(senderId), out connectionId))
+                {
+
+                    // Send the message to the specific recipient
+                    var returnMessagesDto = _mapper.ProjectTo<MessageDto>(messages.AsQueryable());
+                    await Clients.Client(connectionId).MessageStatusUpdate(returnMessagesDto);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+        public async Task MarkNotificationAsRead(Guid messageId)
+        {
+            try
+            {
+                await _notificationService.MarkNotificationAsRead(messageId);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
 
     }
 }

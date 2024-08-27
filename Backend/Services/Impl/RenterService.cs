@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using RentItNow.configurations;
 using RentItNow.Data;
 using RentItNow.DTOs.Rent;
 using RentItNow.Models;
@@ -9,32 +10,31 @@ namespace RentItNow.Services
 {
     public class RenterService : IRenterService
     {
-        public RenterService(RentItNowDbContext context)
+        IUnitOfWork _unitOfWork;
+        public RenterService(IUnitOfWork unitOfWork)
         {
-
+            _unitOfWork = unitOfWork;
         }
 
-        //public async Task<Renter> GetRenterByUsernameAsync(string renterName)
-        //{
+        public async Task<IEnumerable<Renter>> GetAllRentersAsync()
+        {
 
-        //    try
-        //    {
-        //        var renter = await dbSet
-        //                        .Where(r => r.RenterName == renterName)
-        //                        .FirstOrDefaultAsync();
-        //        if (renter == null)
-        //        {
-        //            throw new Exception("renter not found");
-        //        }
-        //        return renter;
-        //    }
-        //    catch (Exception ex)
-        //    {
+            try
+            {
+                var renters = await _unitOfWork.Renter.GetAllRentersWithUserAsync();
+                if (renters == null)
+                {
+                    throw new Exception("not renters not found");
+                }
+                return renters;
+            }
+            catch (Exception ex)
+            {
 
-        //        throw new Exception(ex.Message);
-        //    }
+                throw new Exception(ex.Message);
+            }
 
-        //}
+        }
 
         //public async Task<Renter> GetRenterByUserIdAsync(string userId)
         //{

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using RentItNow.DTOs;
 using RentItNow.DTOs.Customer;
 using RentItNow.DTOs.Item;
+using RentItNow.DTOs.Message;
 using RentItNow.DTOs.Rent;
 using RentItNow.DTOs.Renter;
 using RentItNow.DTOs.User;
@@ -23,13 +24,17 @@ namespace RentItNow.Mapping
             CreateMap<CreateRenterDto, User>().ReverseMap();
             CreateMap<CreateRenterDto, Renter>().ReverseMap();
             CreateMap<CreateRenterDto, CreateUserDto>().ReverseMap();
-            CreateMap<Renter, GetRenterDto>().ReverseMap();
+            CreateMap<Renter, GetRenterDto>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User != null ? (Guid?)Guid.Parse(src.User.Id) : null))
+                .ReverseMap();
             CreateMap<Renter, UpdateRenterDto>().ReverseMap();
 
             CreateMap<CreateCustomerDto, User>().ReverseMap();
             CreateMap<CreateCustomerDto, Customer>().ReverseMap();
             CreateMap<CreateCustomerDto, CreateUserDto>().ReverseMap();
-            CreateMap<Customer, GetCustomerDto>().ReverseMap();
+            CreateMap<Customer, GetCustomerDto>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User != null ? (Guid?)Guid.Parse(src.User.Id) : null))
+                .ReverseMap();
             CreateMap<Customer, UpdateCustomerDto>().ReverseMap();
 
             //CreateMap<CreateItemDto, Item>().ReverseMap()
@@ -52,7 +57,11 @@ namespace RentItNow.Mapping
             .ForMember(dest => dest.RentalOptions, opt => opt.MapFrom(src => src.RentalOptions.Select(ro => new RentalOptionDto {Id = ro.Id, RentalOptionName=ro.RentalOptionName , Price=ro.Price })));
 
             CreateMap<RentalOptionDto, RentalOption>().ReverseMap();
-            CreateMap<RentItemDto, RentalItem>().ReverseMap();
+
+            CreateMap<RentalRequestDto, RentalItem>().ReverseMap();
+            CreateMap<RentaItemDto, RentalItem>()
+                 .ForMember(dest => dest.RentalStatus, opt => opt.MapFrom(src => src.RentalStatus.ToString()))
+                .ReverseMap();
 
             CreateMap<UpdateItemDto, Item>()
                .ForMember(dest => dest.ImageURLs, opt => opt.MapFrom(src => src.Images.Select(i => new ItemImage { ImageURL = i.ToString() })))
@@ -60,6 +69,7 @@ namespace RentItNow.Mapping
                .ForMember(dest => dest.Specifications, opt => opt.MapFrom(src => src.Specifications.Select(spec => new ItemSpecification { SpecificationFeature = spec.SpecificationFeature, FeatureDetail = spec.FeatureDetail })))
                .ReverseMap();
 
+            CreateMap<MessageDto, Messages>().ReverseMap();
 
         }
     }

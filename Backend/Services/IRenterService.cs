@@ -9,8 +9,8 @@ namespace RentItNow.Services
 {
     public interface IRenterService
     {
-  
 
+        public Task<IEnumerable<Renter>> GetAllRentersAsync();
 
 
     }

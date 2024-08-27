@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RentItNow.configurations;
 using RentItNow.Data;
 using RentItNow.Interfaces;
 using RentItNow.Models;
@@ -8,9 +9,31 @@ namespace RentItNow.Services
 {
     public class CustomerService : ICustomerService
     {
-        public CustomerService()
+        IUnitOfWork _unitOfWork;
+        public CustomerService(IUnitOfWork unitOfWork)
         {
+            _unitOfWork = unitOfWork;
         }
+        public async Task<IEnumerable<Customer>> GetAllCustomersAsync()
+        {
+
+            try
+            {
+                var customers = await _unitOfWork.Customer.GetAllCustomersWithUserAsync();
+                if (customers == null)
+                {
+                    throw new Exception("no customers not found");
+                }
+                return customers;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+
+        }
+
 
     }
 }

@@ -36,6 +36,25 @@ namespace RentItNow.Services
             return rentalItems;
         }
 
+        public async Task<RentalItem> GetRentalItemById(Guid rentalId)
+        {
+
+            var rentalItems = await _unitOfWork.RentalItem.GetRentalItemById(rentalId);
+            if (rentalItems == null)
+            {
+                return null;
+            }
+            return rentalItems;
+        }
+        public async Task<IEnumerable<RentalItem>> GetAllRentalItemsByCustomerId(Guid guid)
+        {
+            var rentalItems = await _unitOfWork.RentalItem.GetAllRentalItemsByCustomerId(guid);
+            if (rentalItems == null || rentalItems.Count() == 0)
+            {
+                throw new Exception("RentalItems not found");
+            }
+            return rentalItems;
+        }
         public async Task<bool> IsAvailableForRent(Guid itemId, DateTimeOffset startDate, DateTimeOffset endDate)
         {
             return await _unitOfWork.RentalItem.IsRentalAvailable(itemId, startDate, endDate);
@@ -72,12 +91,12 @@ namespace RentItNow.Services
                     if(rentalItem.RentalStartDate == DateTimeOffset.Now)
                     {
                        item.RentalStatus = Enums.RentalStatus.Rented;
-                       rentalItem.rentalStatus = Enums.RentalStatus.Rented;
+                       rentalItem.RentalStatus = Enums.RentalStatus.Rented;
                     }
                     else
                     {
                        item.RentalStatus = Enums.RentalStatus.Reserved;
-                       rentalItem.rentalStatus = Enums.RentalStatus.Reserved;
+                       rentalItem.RentalStatus = Enums.RentalStatus.Reserved;
                     }
                     customer.RentedItems.Add(rentalItem);
                     renter.RentalItems.Add(rentalItem);
@@ -112,7 +131,7 @@ namespace RentItNow.Services
 
                 item.IsRented = false;
                 item.RentalStatus = Enums.RentalStatus.Available;
-                rentalItem.rentalStatus = Enums.RentalStatus.Available;
+                rentalItem.RentalStatus = Enums.RentalStatus.Available;
                 rentalItem.isRentOver = true;
 
                 await _unitOfWork.Item.UpdateAsync(item);

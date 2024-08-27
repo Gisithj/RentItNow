@@ -40,35 +40,34 @@ namespace RentItNow.BackgroundServices
                             var rentalStartDate = TimeZoneInfo.ConvertTimeFromUtc(rentalItem.RentalStartDate.UtcDateTime, targetTimeZone);
                             var rentalEndDate = TimeZoneInfo.ConvertTimeFromUtc(rentalItem.RentalEndDate.UtcDateTime, targetTimeZone);
 
-                            _logger.LogInformation("RentalStartEndService item time : {time}", rentalItem.RentalStartDate.UtcDateTime);
-                            _logger.LogInformation("RentalStartEndService item converted time : {time}", TimeZoneInfo.ConvertTimeFromUtc(rentalItem.RentalStartDate.UtcDateTime,targetTimeZone));
-                            _logger.LogInformation("RentalStartEndService item status : {status}", rentalItem.rentalStatus);
-                            _logger.LogInformation("RentalStartEndService item status condition : {condition1}", rentalStartDate <= now && rentalEndDate >= now);
-                            _logger.LogInformation("RentalStartEndService item status condition : {condition2}", rentalEndDate < now);
-                            _logger.LogInformation("RentalStartEndService item status condition : {condition3}", rentalStartDate > now);
+                            //_logger.LogInformation("RentalStartEndService item time : {time}", rentalItem.RentalStartDate.UtcDateTime);
+                            //_logger.LogInformation("RentalStartEndService item converted time : {time}", TimeZoneInfo.ConvertTimeFromUtc(rentalItem.RentalStartDate.UtcDateTime,targetTimeZone));
+                            //_logger.LogInformation("RentalStartEndService item status : {status}", rentalItem.RentalStatus);
+                            //_logger.LogInformation("RentalStartEndService item status condition : {condition1}", rentalStartDate <= now && rentalEndDate >= now);
+                            //_logger.LogInformation("RentalStartEndService item status condition : {condition2}", rentalEndDate < now);
+                            //_logger.LogInformation("RentalStartEndService item status condition : {condition3}", rentalStartDate > now);
 
-                            if (rentalItem.rentalStatus == RentalStatus.Reserved && rentalStartDate <= now && rentalEndDate >= now)
+                            if (rentalItem.RentalStatus == RentalStatus.Reserved && rentalStartDate <= now && rentalEndDate >= now)
                             {
-                                rentalItem.rentalStatus = RentalStatus.Rented;
+                                rentalItem.RentalStatus = RentalStatus.Rented;
                                 hasUpdates = true;
                                 _logger.LogInformation("RentalStartEndService item reseved and changed to rented 1");
                             }
-                            else if (rentalItem.rentalStatus == RentalStatus.Reserved && rentalStartDate <= now)
+                            else if (rentalItem.RentalStatus == RentalStatus.Reserved && rentalStartDate <= now)
                             {
-                                rentalItem.rentalStatus = RentalStatus.Rented;
+                                rentalItem.RentalStatus = RentalStatus.Rented;
                                 hasUpdates = true;
                                 _logger.LogInformation("RentalStartEndService item Reserved and changed to Rented 2 ");
                             }
-                            else if (rentalItem.rentalStatus == RentalStatus.Rented && rentalEndDate < now)
+                            else if (rentalItem.RentalStatus == RentalStatus.Rented && rentalEndDate < now)
                             {
-                                rentalItem.rentalStatus = RentalStatus.Available;
-                                rentalItem.isRentOver = true;
+                                rentalItem.RentalStatus = RentalStatus.Overdue;
                                 hasUpdates = true;
-                                _logger.LogInformation("RentalStartEndService item rented and changed to Available ");
+                                _logger.LogInformation("RentalStartEndService item rented and changed to Overdue ");
                             }
-                            else if (rentalItem.rentalStatus == RentalStatus.Available && rentalStartDate > now)
+                            else if (rentalItem.RentalStatus == RentalStatus.Available && rentalStartDate > now)
                             {
-                                rentalItem.rentalStatus = RentalStatus.Reserved;
+                                rentalItem.RentalStatus = RentalStatus.Reserved;
                                 hasUpdates = true;
                                 _logger.LogInformation("RentalStartEndService item rented and Available to Reserved ");
                             }
@@ -78,7 +77,6 @@ namespace RentItNow.BackgroundServices
 
                     if (hasUpdates)
                     {
-
                         await rentalItemScope.UpdateRentalItem(rentalItems);
                         _logger.LogInformation("RentalStartEndService item updated ");
 

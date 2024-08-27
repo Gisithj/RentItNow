@@ -34,6 +34,24 @@ namespace RentItNow.Controllers
             _jwtHelper = jwtHelper;
         }
 
+        [HttpGet("GetAllCustomers")]
+        public async Task<ActionResult<IEnumerable<GetCustomerDto>>> GetAllCustomers()
+        {
+            try
+            {
+                var cutomers = await _unitOfWork.Customer.GetAllCustomersWithUserAsync();
+                if (cutomers == null || cutomers.Count() == 0)
+                {
+                    return NotFound("Renters not found");
+                }
+                var cutomersDtoList = _mapper.ProjectTo<GetCustomerDto>(cutomers.AsQueryable()).ToList();
+                return cutomersDtoList;
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
         // GET: api/Customers
         [Authorize(Roles = UserRoles.Customer)]
         [HttpGet]

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using RentItNow.Models;
+using System;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
 
@@ -48,6 +49,34 @@ namespace RentItNow.Data
                 .HasForeignKey(ri => ri.ItemID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Messages>()
+                .HasOne(s=>s.Sender)
+                .WithMany()
+                .HasForeignKey(s=>s.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Messages>()
+                .HasOne(r => r.Receiver)
+                .WithMany()
+                .HasForeignKey(r=>r.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Messages>()
+                .HasOne(m => m.Chat)
+                .WithMany(c=>c.Messages)
+                .HasForeignKey(c=>c.ChatId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Chat>()
+                .HasOne(c => c.Sender)
+                .WithMany()
+                .HasForeignKey(c => c.SenderId)
+                .OnDelete(DeleteBehavior.Restrict); // Change to Restrict or NoAction
+
+            modelBuilder.Entity<Chat>()
+                .HasOne(c => c.Receiver)
+                .WithMany()
+                .HasForeignKey(c => c.ReceiverId)
+                .OnDelete(DeleteBehavior.Cascade);
 
 
         }
@@ -57,5 +86,10 @@ namespace RentItNow.Data
         public DbSet<Renter> Renters => Set<Renter>();
         public DbSet<Item> Items => Set<Item>();
         public DbSet<RentalItem> RentalItem => Set<RentalItem>();
+        public DbSet<RentalOption> RentalOptions => Set<RentalOption>();
+        public DbSet<Messages> Messages => Set<Messages>();
+        public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<Chat> Chats => Set<Chat>();
+
     }
 }

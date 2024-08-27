@@ -174,6 +174,35 @@ namespace RentItNow.Migrations
                     b.ToTable("Admins");
                 });
 
+            modelBuilder.Entity("RentItNow.Models.Chat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReceiverId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UnreadCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Chats");
+                });
+
             modelBuilder.Entity("RentItNow.Models.Customer", b =>
                 {
                     b.Property<Guid>("CustomerId")
@@ -288,6 +317,77 @@ namespace RentItNow.Migrations
                     b.ToTable("ItemSpecification");
                 });
 
+            modelBuilder.Entity("RentItNow.Models.Messages", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChatId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReceiverId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("RentItNow.Models.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsNotificationRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("RentItNow.Models.RentalItem", b =>
                 {
                     b.Property<Guid>("RentalId")
@@ -312,13 +412,22 @@ namespace RentItNow.Migrations
                     b.Property<DateTimeOffset>("RentalStartDate")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("RentalStatus")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("RenterId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("isOverdue")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("isRentOver")
                         .HasColumnType("bit");
 
-                    b.Property<int>("rentalStatus")
+                    b.Property<int>("overdueDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("rentalPrice")
                         .HasColumnType("int");
 
                     b.HasKey("RentalId");
@@ -352,7 +461,7 @@ namespace RentItNow.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("RentalOption");
+                    b.ToTable("RentalOptions");
                 });
 
             modelBuilder.Entity("RentItNow.Models.Renter", b =>
@@ -499,6 +608,25 @@ namespace RentItNow.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("RentItNow.Models.Chat", b =>
+                {
+                    b.HasOne("RentItNow.Models.User", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RentItNow.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("RentItNow.Models.Customer", b =>
                 {
                     b.HasOne("RentItNow.Models.User", "User")
@@ -539,6 +667,33 @@ namespace RentItNow.Migrations
                         .IsRequired();
 
                     b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("RentItNow.Models.Messages", b =>
+                {
+                    b.HasOne("RentItNow.Models.Chat", "Chat")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RentItNow.Models.User", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RentItNow.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("RentItNow.Models.RentalItem", b =>
@@ -586,6 +741,11 @@ namespace RentItNow.Migrations
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RentItNow.Models.Chat", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("RentItNow.Models.Customer", b =>
