@@ -41,34 +41,12 @@ function Dashboard({ params }: { params: { tab: string } }) {
  
   return (
     <div className='w-full'>
-      {/* {
-        isNewListingActive?
-        <NewListing handleNewListingClick={handleNewListingClick}/>
-        :
-       sideBarTab === 'rental-requests' ?
-        <RentalRequests/>
-        :sideBarTab === 'manage-listings' ?
-        <ManageListings handleNewListingClick={handleNewListingClick}/>
-        :sideBarTab === 'settings' ?
-        <Settings/>
-        :sideBarTab === 'home'?
-        <Home/>
-        :
-        <></>
-      } */}
       {
-        //  isNewListingActive?
-        //  <NewListing handleNewListingClick={handleNewListingClick}/>
-        //  :
-        //  isEditistingActive?
-        //  <NewListing handleNewListingClick={handleNewListingClick}/>
-        //  :
           tab.includes('add-new-listing')?
           <NewListing isInEditMode={false}/>
           :tab.includes('rental-requests') ?
           <RentalRequests/>
           :tab.includes('manage-listings') ?
-          //<ManageListings handleNewListingClick={handleNewListingClick} handleEditListingClick={handleEditListingClick}/>
           <ManageListings />
           :tab.includes('setting') ?
           <ProfileSettings/>

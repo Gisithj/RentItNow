@@ -26,6 +26,7 @@ function Catelog({pagedItems,isLoading}:{pagedItems:PagedItem[],isLoading:boolea
       filtered = filtered.filter(item => item.rentalStatus !== 'Rented');
     }
     setFilteredItems(filtered);
+    
   }, [pagedItems, selectedCategories, isNotRented]);
   // const filterItemsByCategory = () => {
   //   if(selectedCategories.length>0){
@@ -74,7 +75,7 @@ function Catelog({pagedItems,isLoading}:{pagedItems:PagedItem[],isLoading:boolea
       {isLoading ?
       Array.from({ length: 16 }).map((_, index) => (
         <Skeleton key={index} isLoaded={!isLoading} className='rounded-lg'>
-            <div className="h-[20rem] w-[20rem] bg-default-300"></div>
+            <div className="h-[10rem] w-[20rem] bg-default-300"></div>
         </Skeleton>
       ))
       :

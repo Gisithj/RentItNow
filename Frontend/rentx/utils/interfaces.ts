@@ -29,6 +29,18 @@ export interface GetItem{
     rentalStatus:string
     renterId:string
 }
+
+// export interface RentalItem{
+//     rentalStartDate:string,
+//     rentalEndDate:string,
+//     rentalOptionId:string
+//     rentalPrice :number
+//     Hours :number
+//     isOverdue :boolean
+//     overdueDays :number
+//     rentalStatus:string
+//     isRentOver:boolean
+// }
 export interface Item{
     itemName: string
     category:string
@@ -46,7 +58,7 @@ export interface RentItem{
     itemId:string
     rentalStartDate:string
     rentalEndDate:string
-    
+    rentalPrice :number    
     rentalOptionId:string
     hoursCount?:number
     customerId:string
@@ -57,8 +69,12 @@ export interface RentalItem {
     rentalId: string;
     rentalStartDate: string;
     rentalEndDate: string;
-    hours: number;
-    isRentOver: boolean;
+    rentalPrice :number
+    hours :number
+    isOverdue :boolean
+    overdueDays :number
+    rentalStatus:string
+    isRentOver:boolean
     rentalOptionId: string;
     customerId: string;
     customer: Customer;
@@ -66,7 +82,23 @@ export interface RentalItem {
     item: Item;
     renterId: string;
   
-  }
+}
+
+export interface CustomerRentalItem {
+    rentalId: string;
+    item: Item;
+    rentalStartDate: string;
+    rentalEndDate: string;
+    rentalPrice :number
+    hours :number
+    isOverdue :boolean
+    overdueDays :number
+    rentalStatus:string
+    isRentOver:boolean
+    renterId: string;  
+    rentalOptionId: string;
+
+}
 
 export interface UpdateItem{
     itemId:string
@@ -81,16 +113,41 @@ export interface UpdateItem{
 }
 
 export interface Renter{
+    userId?:string
     renterId: string
     renterName: string
     renterAddress: string
     contactNo: string
 }
 export interface Customer {
+    
+    userId?: string;
     customerId: string;
     name: string;
     email: string;
     contactNo: string;
     address: string;
-    userId: string;
+  }
+  export enum MessageStatus {
+    SENT = 0,
+    DELIVERED = 1,
+    READ = 2
+  }
+  export interface Message {
+    id:string
+    content: string; 
+    timestamp :string
+    senderId :string
+    receiverId :string
+    status:MessageStatus
+  }
+
+  export interface Notification {
+    id: string,
+    userId: string,
+    senderId: string,
+    title: string,
+    message: string,
+    isNotificationRead: boolean,
+    createdAt:Date
   }

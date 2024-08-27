@@ -27,20 +27,26 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import DateTimePicker from "@/app/components/ui/datetimepicker";
-import { connection, sendRentalRequestToRenter } from "@/utils/signalrService";
-import { GET_ITEM_BY_ID_WITH_INCLUDE, IS_ITEM_AVAIALABLE, RENT_ITEM } from "@/api/item";
+import { GET_ITEM_BY_ID_WITH_INCLUDE, GET_RENTAL_ITEMS_BY_RENTAL_ID, IS_ITEM_AVAIALABLE, RENT_ITEM } from "@/api/item";
 import { ChangeEvent, useEffect, useState } from "react";
-import { GetItem, Item, Renter } from "@/utils/interfaces";
+import { GetItem, Item, RentalItem, Renter } from "@/utils/interfaces";
 import { GET_RENTER_BY_ID } from "@/api/renter";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import { log } from "console";
 import { fetchItemByIdWithInclude } from "@/lib/features/updateTriggerSlice";
 import { useAppDispatch } from "@/lib/hooks";
-import { FaCircleCheck } from "react-icons/fa6";
+import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import { set } from "date-fns";
+import SignIn from "@/app/components/signIn";
 
-const ProductPage = ({ params }: { params: { productId: string } }) => {
-  const { productId } = useParams();
+const ProductPage = ({ params }: { params: { slug: string[]} }) => {
+  const productId = params.slug[0];
+  const rentalView = params.slug[1] || "false";
+  
+  console.log(params.slug);
+  console.log(productId);
+  console.log(rentalView);
+  
   const router = useRouter();
   const dispatch = useAppDispatch();
   //redux states
@@ -50,12 +56,13 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
     (state: RootState) => state.updateTrigger
   );
   //local states
-  const [item, setItem] = useState<GetItem>();
+  const [item, setItem] = useState<GetItem | null>(itemWithInclude);
+  const [rentalItem, setRentalItem] = useState<RentalItem | null>();
   const [renterDetails, setRenterDetails] = useState<Renter>();
   const [selectedRentalOption, setSelectedRentalOption] = useState<string>(
     itemWithInclude?.rentalOptions[0].rentalOptionName || ""
   );
-  const [startDate, setStartDate] = useState<Date>();
+  const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>();
   const [hoursCount, setHoursCount] = useState("1");
   const [rentalDurationErrorMessage, setRentalDurationErrorMessage] = useState("");
@@ -66,20 +73,17 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
   const [isRentConfirmed, setIsRentConfirmed] = useState(false);
   const [isRentStarted, setIsRentStarted] = useState(false);
   const [isRented, setIsRented] = useState(false);
+  const [isRentFailed, setIsRentFailed] = useState(false);
   const [isItemAvailable, setIsItemAvailable] = useState(false);
   const [initialLoadOver, setInitialLoadOver] = useState(false);
-
+  const [rentalPrice,setRentalPrice] = useState(0);
   //specification arrays
   let firstHalf: any[] = [];
   let secondHalf: any[] = [];
 
   const handleRentModelOpen = () => {
-    console.log("in Rent model open");
     onOpen();
     setIsRented(false);
-    console.log("isRentStarted", isRentStarted);
-    console.log("isRentConfirmed", isRentConfirmed);
-    console.log("isRented", isRented);
   };
   const today = new Date();
   //handle date selection
@@ -102,7 +106,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
   const handleHours = (e: ChangeEvent<HTMLInputElement>) => {
     console.log("in the hours count handle");
     setHoursCount(e.target.value);
-    calculateRental;
+    calculateRental();
   };
 
   //handle duration error message state
@@ -116,10 +120,12 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
     setIsDurationError(true);
   };
   //create specification arrays
-  if (itemWithInclude != null || undefined) {
-    var middleIndex = Math.ceil(itemWithInclude!.specifications.length / 2);
-    firstHalf = itemWithInclude!.specifications.slice(0, middleIndex);
-    secondHalf = itemWithInclude!.specifications.slice(middleIndex);
+  if (item != null && item.specifications.length > 0) {
+    console.log(item);
+    
+    var middleIndex = Math.ceil(item!.specifications.length / 2);
+    firstHalf = item!.specifications.slice(0, middleIndex);
+    secondHalf = item!.specifications.slice(middleIndex);
   }
 
   //handle click rent now
@@ -128,21 +134,23 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
       router.push("/auth/sign-in");
     } else {
       setIsRented(false);
+      setIsRentFailed(false);
       setIsRentConfirmed(true);
       const rentItem = {
-        itemId: productId[0],
+        itemId: productId,
         rentalStartDate: startDate!.toISOString(),
-        rentalEndDate: endDate!.toISOString(),
+        rentalEndDate: endDate? endDate.toISOString():startDate!.toISOString(),
         hours: hoursCount ? parseInt(hoursCount) : null,
-        rentalOptionId: itemWithInclude!.rentalOptions.find(
+        rentalPrice: rentalPrice,
+        rentalOptionId: item!.rentalOptions.find(
           (option) =>
             option.rentalOptionName.toLowerCase() ===
             selectedRentalOption.toLowerCase()
         )?.id!,
         customerId: user!.roleId,
-        renterId: itemWithInclude!.renterId,
+        renterId: item!.renterId,
       };
-      try {
+      // try {
         RENT_ITEM(rentItem)
           .then((response) => {
             dispatch(fetchItemByIdWithInclude(productId as string));
@@ -150,41 +158,23 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
             console.log(response);
           })
           .catch((error) => {
+            setIsRentFailed(true);
             console.error(error);
           })
           .finally(() => {
+            console.log("in the finally",isRentFailed);
+            
             setIsRented(true);
             setIsRentStarted(false);
             setIsRentConfirmed(false);
           });
-      } catch (error) {
-        console.error(error);
-      }
+      // } catch (error) {
+      //   setIsRentFailed(true);
+      //   console.error(error);
+      // }
     }
 
-    //send a rental request using signalR
 
-    // let connection = new HubConnectionBuilder()
-    // .withUrl("https://localhost:44375/chat", { withCredentials: true })
-    // .build();
-    // console.log(connection);
-    //   connection.start()
-    //     .then(function () {
-    //       console.log("connected");
-    //       if(isLoggedIn && user?.id && productId){
-    //         console.log("logged in");
-    //         console.log(user?.id);
-    //         console.log(productId);
-
-    //         connection.invoke("SendRentalRequestToRenter", productId[0],user?.id)
-    //         .catch(err => console.error("Error sending request:", err));
-    //       }else{
-    //         console.log("not logged in");
-    //       }
-    //     })
-    //     .catch(function (err) {
-    //       return console.error(err.toString());
-    //     });
   };
 
   const getDays = (endDate: Date, startDate: Date) => {
@@ -195,7 +185,8 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
 
   //calculate rental
   const calculateRental = () => {
-    if (!itemWithInclude) return 0;
+    let price;
+    if (!item) return 0;
     if (selectedRentalOption.toLowerCase() !== "rent per hour") {
       if (!startDate || !endDate) return 0;
       if (startDate > endDate) return 0;
@@ -213,15 +204,19 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
         if (isDurationError) {
           handleIsDurationError();
         }
-        return (
-          "Rs." +
+        price = "Rs." +
           (
-            itemWithInclude.rentalOptions.find(
+            item.rentalOptions.find(
               (option) =>
                 option.rentalOptionName.toLowerCase() ===
                 selectedRentalOption.toLowerCase()
             )?.price! * parseInt(hoursCount)
-          ).toFixed(2)
+          ).toFixed(2);
+          console.log(price);
+          
+        setRentalPrice(parseFloat(price.split("Rs.")[1]));
+        return (
+          price
         );
       }
     } else if (selectedRentalOption.toLowerCase() === "rent per day") {
@@ -231,21 +226,25 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
             "Duration cannot be more than 7 days on daily rental option"
           );
         }
-        return;
+        return "Rs.0.00";
       } else {
         if (isDurationError) {
           handleIsDurationError();
         }
         const noOfDays = getDays(endDate!, startDate!);
-        return (
+        price =
           "Rs." +
           (
-            itemWithInclude.rentalOptions.find(
+            item.rentalOptions.find(
               (option) =>
                 option.rentalOptionName.toLowerCase() ===
                 selectedRentalOption.toLowerCase()
             )?.price! * noOfDays
           ).toFixed(2)
+        ;
+        setRentalPrice(parseFloat(price.split("Rs.")[1]));
+        return (
+          price
         );
       }
     } else if (selectedRentalOption.toLowerCase() === "rent per week") {
@@ -255,21 +254,25 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
             "Duration cannot be less than 7 days on weekly rental option"
           );
         }
-        return;
+        return "Rs.0.00";
       } else {
         if (isDurationError) {
           handleIsDurationError();
         }
         const noOfWeeks = getDays(endDate!, startDate!) / 7;
-        return (
+        price =
           "Rs." +
           (
-            itemWithInclude.rentalOptions.find(
+            item.rentalOptions.find(
               (option) =>
                 option.rentalOptionName.toLowerCase() ===
                 selectedRentalOption.toLowerCase()
             )?.price! * noOfWeeks
           ).toFixed(2)
+        ;
+        setRentalPrice(parseFloat(price.split("Rs.")[1]));
+        return (
+          price
         );
       }
     } else if (selectedRentalOption.toLowerCase() === "rent per month") {
@@ -285,15 +288,19 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
           handleIsDurationError();
         }
         const noOfMonth = getDays(endDate!, startDate!) / 30;
-        return (
+        price =
           "Rs." +
           (
-            itemWithInclude.rentalOptions.find(
+            item.rentalOptions.find(
               (option) =>
                 option.rentalOptionName.toLowerCase() ===
                 selectedRentalOption.toLowerCase()
             )?.price! * noOfMonth
           ).toFixed(2)
+        ;
+        setRentalPrice(parseFloat(price.split("Rs.")[1]));
+        return (
+          price
         );
       }
     }
@@ -312,7 +319,10 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
   useEffect(() => {
     //get the renter details
     const getRenter = async () => {   
-      itemWithInclude && GET_RENTER_BY_ID(itemWithInclude!.renterId)
+      console.log("in the get renter");
+      
+      if(rentalView){
+        item && GET_RENTER_BY_ID(item!.renterId)
         .then((response) => {
           setRenterDetails(response);
           console.log("Renter");
@@ -322,6 +332,18 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
         .catch((error) => {
           console.error(error);
         });
+      }else{
+        itemWithInclude && GET_RENTER_BY_ID(itemWithInclude!.renterId)
+        .then((response) => {
+          setRenterDetails(response);
+          console.log("Renter");
+          setIsRenterLoaded(true);
+          console.log(response);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+      }
     }
     //get the item details
     const getItem = async () => {
@@ -345,29 +367,63 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
           console.error(error);
         });
     };
-
-
+    console.log(productId);  
+    console.log(isItemLoaded);      
     if (!isItemLoaded) {
+      console.log(rentalView);
       setIsItemLoaded(false);
-      getItem();
-      getRenter();
+      (rentalView === "false") && getItem();
+      
     }
-  }, [itemWithInclude, productId]);
+    getRenter();
+    
+  }, [itemWithInclude, rentalView,isItemLoaded]);
+
+  useEffect(() => {    
+    const isItemAvailable = async () => {
+      
+      setInitialLoadOver(true);
+      console.log(startDate);
+      
+      
+      if(!endDate){
+        await IS_ITEM_AVAIALABLE(productId, startDate!.toISOString(), startDate!.toISOString()).then((response) => {
+          console.log(response);
+          setIsItemAvailable(response)
+          
+        });
+      }else{
+        await IS_ITEM_AVAIALABLE(productId, startDate!.toISOString(), endDate.toISOString()).then((response) => {
+          console.log(response);
+          setIsItemAvailable(response)
+          
+        });
+      }
+    };
+    (rentalView==="false") && isItemAvailable();
+  },[startDate,endDate,productId])
 
   useEffect(() => {
+    // Ensure all conditions are met before calling calculateRental
+    if (startDate && selectedRentalOption) {
+      calculateRental();
+    }
+  }, [startDate, endDate, selectedRentalOption,hoursCount]);
+
+  useEffect(()=>{
     
-    const isItemAvailable = async () => {
-      if(!startDate || !endDate) return;
-      setInitialLoadOver(true);
-      await IS_ITEM_AVAIALABLE(productId[0], startDate.toISOString(), endDate.toISOString()).then((response) => {
-        console.log(response);
-        setIsItemAvailable(response)
-        
-      });
+    if(rentalView==="true"){
+      console.log("in the rental view");
       
-    };
-    isItemAvailable();
-  },[startDate,endDate])
+       GET_RENTAL_ITEMS_BY_RENTAL_ID(productId).then((response) => {
+        console.log("gggg");
+        setRentalItem(response)
+        setItem(response.item);
+        setIsItemLoaded(true);
+        console.log(response);        
+      })
+    }
+  },[rentalView,productId])
 
   return (
     <div className="px-4 md:px-20 lg:px-44 py-4 md:py-10">
@@ -375,8 +431,8 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div className="w-full">
             {isItemLoaded ? (
-              itemWithInclude && (
-                <ProductCarousel images={itemWithInclude!.imageURLs} />
+              item && (
+                <ProductCarousel images={item!.imageURLs} />
               )
             ) : (
               <Skeleton className="rounded-lg">
@@ -386,17 +442,17 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
           </div>
           <div className="flex flex-col gap-2 items-start">
             <Skeleton isLoaded={isItemLoaded} className="max-w-xs h-3 " />
-            <h1 className="text-4xl font-bold">{itemWithInclude?.itemName}</h1>
+            <h1 className="text-4xl font-bold">{item?.itemName}</h1>
             {isRenterloaded ? (
               renterDetails && (
                 <User
                   onClick={() =>
-                    handleRenterProfileClick(itemWithInclude!.renterId)
+                    handleRenterProfileClick(item!.renterId)
                   }
                   name={renterDetails?.renterName}
                   className="cursor-pointer"
                   description={
-                    <Link size="sm" isExternal>
+                    <Link size="sm" onClick={()=>{router.push('/chat')}} >
                       @{renterDetails && renterDetails?.renterName}
                     </Link>
                   }
@@ -432,8 +488,10 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                     </ul>
                   </div>
                 </div> */}
-              <p>{itemWithInclude?.itemDescription}</p>
-              {itemWithInclude && (
+              <p>{item?.itemDescription}</p>
+              {item && (
+                (rentalView==="false") &&
+
                 <Select
                   size="sm"
                   label="Select a rent option"
@@ -442,7 +500,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                   defaultSelectedKeys={["Rent per hour"]}
                   onChange={onRentalOptionChange}
                 >
-                  {itemWithInclude.rentalOptions.map((rentOption) => (
+                  {item.rentalOptions.map((rentOption) => (
                     <SelectItem
                       key={rentOption.rentalOptionName}
                       value={rentOption.rentalOptionName}
@@ -452,63 +510,66 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                   ))}
                 </Select>
               )}
-              {selectedRentalOption.toLowerCase() === "rent per hour" ? (
-                <>
-                  <div>
-                    <Input
-                      type="email"
-                      label="No of hours"
-                      placeholder="Enter no of hours"
-                      value={hoursCount}
-                      className="max-w-xs"
-                      onChange={(e) => handleHours(e)}
-                    />
-                  </div>
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div>
-                      <h1 className="text-sm">Date</h1>
-                      <DateTimePicker onDateChange={handleStartDateChange} />
-                    </div>
-                  </div>
-                </>
-              ) : (
+              {rentalView==="true" ? 
+              <div>{item?.rentalOptions.find(()=>rentalItem?.rentalOptionId)?.rentalOptionName}</div>
+            :
+            selectedRentalOption.toLowerCase() === "rent per hour" ? (
+              <>
+                <div>
+                  <Input
+                    type="email"
+                    label="No of hours"
+                    placeholder="Enter no of hours"
+                    value={hoursCount}
+                    className="max-w-xs"
+                    onChange={(e) => handleHours(e)}
+                  />
+                </div>
                 <div className="flex flex-col md:flex-row gap-4">
                   <div>
-                    <h1 className="text-sm">From</h1>
+                    <h1 className="text-sm">Date</h1>
                     <DateTimePicker onDateChange={handleStartDateChange} />
                   </div>
-                  <div>
-                    <h1 className="text-sm">To</h1>
-                    <DateTimePicker onDateChange={handleEndDateChange} />
-                  </div>
                 </div>
-              )}
+              </>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-4">
+                <div>
+                  <h1 className="text-sm">From</h1>
+                  <DateTimePicker onDateChange={handleStartDateChange} />
+                </div>
+                <div>
+                  <h1 className="text-sm">To</h1>
+                  <DateTimePicker onDateChange={handleEndDateChange} />
+                </div>
+              </div>
+            )}
+
               {isDurationError && (
                 <span className="text-sm font-normal text-danger-500">
                   {rentalDurationErrorMessage}
                 </span>
               )}
-              <span className="text-2xl font-bold">{calculateRental()}</span>
-              {/* {itemWithInclude?.isRented ? (
-                "Item Not available for renting right now"
-              ) : (
-                <Button onPress={handleRentModelOpen}>Rent Now</Button>
-              )} */}
-              {!isItemAvailable ? (
-                !initialLoadOver ? (
-                 "Select the dates to check availability"
+
+              <span className="text-2xl font-bold">{`Rs.${rentalView==="true"?rentalItem?.rentalPrice:rentalPrice.toFixed(2)}`}</span>
+
+              {rentalView==="false" && 
+                (!isItemAvailable ? (
+                  !initialLoadOver ? (
+                  "Select the dates to check availability"
+                  ) : (
+                  "Item Not available for renting right now"
+                  )
                 ) : (
-                "Item Not available for renting right now"
-                )
-              ) : (
-                <Button onPress={handleRentModelOpen}>Rent Now</Button>
-              )}
+                  <Button onPress={handleRentModelOpen}>Rent Now</Button>
+                ))
+              }
             </div>
           </div>
         </div>
         <div className="flex flex-col gap-4">
           <span className="text-2xl font-bold">Product overview</span>
-          <p>{itemWithInclude?.itemOverview}</p>
+          <p>{item?.itemOverview}</p>
         </div>
         <div className="flex flex-col gap-4">
           <span className="text-2xl font-bold">Product Specifications</span>
@@ -524,7 +585,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                 <TableColumn>Value</TableColumn>
               </TableHeader>
               <TableBody>
-                {itemWithInclude ? (
+                {item ? (
                   firstHalf.map((specification, index) => (
                     <TableRow key={index} className="border-b-slate-800">
                       <TableCell>
@@ -554,7 +615,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                 <TableColumn>ROLE</TableColumn>
               </TableHeader>
               <TableBody>
-                {itemWithInclude && secondHalf.length > 0 ? (
+                {item && secondHalf.length > 0 ? (
                   secondHalf.map((specification, index) => (
                     <TableRow key={index} className="border-b-slate-800">
                       <TableCell>
@@ -576,6 +637,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
           </div>
         </div>
       </div>
+      {isLoggedIn ?
       <Modal
         size="lg"
         isOpen={isOpen}
@@ -603,6 +665,7 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                     aria-label={"Renting the item..."}
                   />
                 ) : (
+                  !isRentFailed?
                   <>
                     <FaCircleCheck fontSize={30} className="text-success" />
 
@@ -610,6 +673,14 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
                       {!isRented
                         ? "Renting the item..."
                         : "Your item is rented successfully!!"}
+                    </h1>
+                  </>
+                  :
+                  <>
+                    <FaCircleXmark fontSize={30} className="text-danger" />
+
+                    <h1 className="text-xl font-medium">
+                      Your renting failed. Please try again
                     </h1>
                   </>
                 )}
@@ -638,6 +709,19 @@ const ProductPage = ({ params }: { params: { productId: string } }) => {
           )}
         </ModalContent>
       </Modal>
+      :
+      <Modal 
+        backdrop="blur" 
+        isOpen={isOpen} 
+        onOpenChange={onOpenChange}
+        
+      >
+        <ModalContent>
+          <SignIn onClose={onClose}/>
+        </ModalContent>
+      </Modal>
+      }
+      
     </div>
   );
 };
