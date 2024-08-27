@@ -4,6 +4,7 @@
     {
         Available,
         Rented,
-        Reserved
+        Reserved,
+        Overdue
     }
 }

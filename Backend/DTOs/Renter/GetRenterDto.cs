@@ -8,6 +8,7 @@ namespace RentItNow.DTOs.Rent
         public string RenterName { get; set; } = string.Empty;
         public string RenterAddress { get; set; } = string.Empty;
         public string ContactNo { get; set; } = string.Empty;
+        public Guid? UserId { get; set; }
 
     }
 }

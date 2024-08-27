@@ -7,5 +7,6 @@ namespace RentItNow.Interfaces
         public Task<Customer> GetCustomerByUsernameAsync(string customerName);
         public Task<Customer> GetCustomerByUserIdAsync(string userId);
         public Task<Customer> GetCustomerWithRentedItems(Guid customerId);
+        public Task<IEnumerable<Customer>> GetAllCustomersWithUserAsync();
     }
 }

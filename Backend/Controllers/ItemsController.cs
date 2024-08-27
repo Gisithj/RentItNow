@@ -149,13 +149,13 @@ namespace RentItNow.Controllers
         }
 
         [HttpGet("RentedItemsByRenter/{renterId}")]
-        public async Task<ActionResult<IEnumerable<RentItemDto>>> GetRentedItemsByRenterWithInclude(Guid renterId)
+        public async Task<ActionResult<IEnumerable<RentaItemDto>>> GetRentedItemsByRenterWithInclude(Guid renterId)
         {
             try
             {
                 //var allitems = await _itemService.GetAllRentedItemsByRenterWithInclude(renterId);
                 var allItems = await _rentalItemService.GetAllRentedItemsByRenterWithIncludeAsync(renterId);
-                var itemDtos = _mapper.Map<IEnumerable<RentItemDto>>(allItems).ToList();
+                var itemDtos = _mapper.Map<IEnumerable<RentaItemDto>>(allItems).ToList();
                 return itemDtos;
             }
             catch (Exception ex)
@@ -241,13 +241,13 @@ namespace RentItNow.Controllers
         }
 
         [HttpPost("RentItem")]
-        public async Task<ActionResult<RentItemDto>> RentItem(RentItemDto rentItemDto)
+        public async Task<ActionResult> RentItem(RentalRequestDto rentItemDto)
         {
             try
             {
-                RentalItem rentalItem = _mapper.Map<RentItemDto, RentalItem>(rentItemDto);
+                RentalItem rentalItem = _mapper.Map<RentalRequestDto, RentalItem>(rentItemDto);
                 await _rentalItemService.RentItemAsync(rentalItem);
-                return rentItemDto;
+                return Ok();
        
 
             }
@@ -285,6 +285,38 @@ namespace RentItNow.Controllers
                 return endRentDto;
 
 
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("GetRentalItemById/{rentalId}")]
+        public async Task<ActionResult<RentaItemDto>> GetRentalItemById(Guid rentalId)
+        {
+            try
+            {
+                var item = await _rentalItemService.GetRentalItemById(rentalId);
+                var itemDto = _mapper.Map<RentaItemDto>(item);
+                return itemDto;
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("GetAllRentalItemByCustomerId/{customerId}")]
+        public async Task<ActionResult<IEnumerable<RentaItemDto>>> GetAllRentalItemByCustomerId(Guid customerId)
+        {
+            try
+            {
+                var items = await _rentalItemService.GetAllRentalItemsByCustomerId(customerId);
+                var itemDtos = _mapper.Map<IEnumerable<RentaItemDto>>(items).ToList();
+                return itemDtos;
             }
             catch (Exception ex)
             {

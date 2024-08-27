@@ -9,6 +9,7 @@ using RentItNow.Data;
 using RentItNow.Helpers;
 using RentItNow.Models;
 using RentItNow.Services;
+using RentItNow.Services.Impl;
 using RentItNow.websocket;
 using System.Reflection.Emit;
 using System.Text;
@@ -72,12 +73,13 @@ internal class Program
                 }
             };
         })
-        .AddGoogle(options =>
-        {
-            options.ClientId = "604527366317-u7t19epden2etnr0m5h4jum6ir634fnd.apps.googleusercontent.com";
-            options.ClientSecret = "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";
-            options.CallbackPath = "/api/Auth/google-callback";
-        })
+        // .AddGoogle(options =>
+        // {
+        //     options.ClientId = "604527366317-u7t19epden2etnr0m5h4jum6ir634fnd.apps.googleusercontent.com";
+        //     options.ClientSecret = "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";
+        //     options.CallbackPath = "/api/Auth/google-callback";
+        // })
+
         ;
         builder.Services.AddAuthorization();
         builder.Services.AddControllers();
@@ -89,7 +91,9 @@ internal class Program
         builder.Services.AddScoped<SignInManager<User>>();
         builder.Services.AddScoped<IUserClaimsPrincipalFactory<User>, UserClaimsPrincipalFactory<User, IdentityRole>>();
 
-
+        builder.Services.AddScoped<IChatService, ChatService>();
+        builder.Services.AddScoped<INotificationService, NotificationService>();
+        builder.Services.AddScoped<IMessageService, MessageService>();
         builder.Services.AddScoped<IRentalItemService,RentalItemService>();
         builder.Services.AddScoped<IItemService, ItemService>();
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
