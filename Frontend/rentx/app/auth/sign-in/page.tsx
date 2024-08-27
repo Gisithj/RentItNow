@@ -93,6 +93,7 @@ function SignIn() {
               {/* <Card className='w-full'>
                 <CardBody className='w-full flex flex-col gap-4'> */}
                   <Input
+                    id='username'
                     type="text"
                     variant={"bordered"}
                     label="Username"
@@ -101,6 +102,7 @@ function SignIn() {
                     // errorMessage={isCredentialsWrong && "Please enter a valid Username"}
                     onValueChange={setValueUsername}/>
                   <Input
+                    id='password'
                     type={isVisible ? "text" : "password"}
                     variant={"bordered"}
                     label="Password"
@@ -119,7 +121,7 @@ function SignIn() {
                     isCredentialsWrong && "Incorrect username or password"}
                     onValueChange={setValuePassword}
                     />
-                  <Button color='primary' onClick={handleSubmit}>Log in</Button>
+                  <Button id="log_in" color='primary' onClick={handleSubmit}>Log in</Button>
                   <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
                         Sign Up
                   </Button>

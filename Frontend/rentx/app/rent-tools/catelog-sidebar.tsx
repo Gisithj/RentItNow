@@ -1,44 +1,22 @@
 "use client";
 import {
-  Listbox,
-  ListboxSection,
-  ListboxItem,
-  Slider,
-  Chip,
   Divider,
   Checkbox,
   CheckboxGroup,
+  DateRangePicker
 } from "@nextui-org/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FilterChip } from "./filter-chip";
-
-function CatelogSidebar() {
-  const handleAccountSettingsClick = () => {};
-  const power_tool_categories = [
-    "Drilling",
-    "Cutting",
-    "Sanding",
-    "Grinding",
-    "Fastening",
-    "Routing",
-    "Planing",
-    "Heating",
-    "Nailing",
-    "Jointing",
-    "Sawing",
-    "Polishing",
-    "Finishing",
-    "Cleaning",
-    "Painting",
-    "Measuring",
-    "Welding",
-    "Compressing",
-    "Power Generation",
-    "Turning",
-    "Milling",
-    "Pressing",
-    "Sharpening",
-  ];
+import { useAppDispatch } from "@/lib/hooks";
+import { RootState } from "@/lib/store";
+import { useSelector } from "react-redux";
+import { set } from "date-fns";
+import {parseDateTime, getLocalTimeZone,today} from "@internationalized/date";
+import { setIsNotRented, setSelectedCategories, setAvailabilityDateRange} from "@/lib/features/filterSlice";
+import {RangeValue} from "@react-types/shared";
+import {DateValue} from "@react-types/datepicker";
+function CatelogSidebar({handleIsAvailabilityChecking}: { handleIsAvailabilityChecking: () => void}){
+  const power_tool_categories = ["Gardening", "Construction", "Woodworking", "Plumbing", "Electrical", "Automotive", "Painting", "Cleaning","Home Improvement"]
   const power_tool_brands = [
     "DeWalt",
     "Makita",
@@ -54,42 +32,59 @@ function CatelogSidebar() {
     "Metabo",
     "Kobalt",
   ];
-  const [selected, setSelected] = useState<String[]>([]);
-  const [selectedFilters, setSelectedFilters] = useState<String[]>([]);
-  const [groupSelected, setGroupSelected] = React.useState([]);
-  const handleFilterClick = (value:any) =>{
-    if(selectedFilters.includes(value)){
-        console.log("asdasd");
-        
-        setSelectedFilters(selectedFilters.filter(item => item !== value));
-    }else{
-        setSelectedFilters([...selectedFilters,value])
-    }
-    console.log(value);
+  const dispatch = useAppDispatch();
+  const isFirstRender = useRef(true);
+  const [selectedStartDate, setSelectedStartDate] = useState<RangeValue<DateValue>>({
+    start: parseDateTime(today(getLocalTimeZone()).toString()),
+    end: parseDateTime(today(getLocalTimeZone()).add({days:1}).toString()),
+  });
+  const {selectedCategories} = useSelector((state:RootState) => state.filterSlice);
+  const isNotRented = useSelector((state:RootState) => state.filterSlice.isNotRented);
+  const handleIsNotRentedChange = () =>{
+    // if(isNotRented){
+    //   console.log("in true");
+      
+      dispatch(setIsNotRented(!isNotRented));
+    // }else{
+    //   console.log("in false");
+    //   dispatch(setIsNotRented(true));
+    // }
+  }
+  const handleAvailabilityDateRangeChange = () =>{
+      dispatch(setAvailabilityDateRange({
+        startDate: new Date(selectedStartDate.start.toString()).toISOString(),
+        endDate:new Date(selectedStartDate.end.toString()).toISOString()}));
+  }
+  const handleCategoryChange = (selectedCategories: string[]) => {
+    // Dispatch an action with the selected categories as payload
+    dispatch(setSelectedCategories(selectedCategories));
+    console.log("dispatched categories");
     
-    // setSelectedFilters(value)
-  }
-  const handleBrandSelect = (value:any) =>{
-    setSelected(value)
-  }
+  };
 
   useEffect(()=>{
-    console.log(selected);
-    console.log(selectedFilters);
-  },[selected,selectedFilters])
+    if (isFirstRender.current) {
+      isFirstRender.current = false; // After the first render, set this to false
+    } else {
+      // Not the first render, so safe to call these functions
+      handleIsAvailabilityChecking();
+      handleAvailabilityDateRangeChange();
+    }
+  },[selectedStartDate])
+
   return (
-    <div className="w-full max-w-[260px] h-fit border-small px-8 py-4 rounded-small border-default-200 dark:border-default-100">
+    <div className="w-full max-w-[280px] h-fit border-small px-4 py-4 rounded-small border-default-200 dark:border-default-100">
       <div className="flex flex-col gap-2">
         <span className="text-xs font-light">Categories</span>
         <div className="flex flex-wrap gap-1">
         <CheckboxGroup
         className="gap-1"
         orientation="horizontal"
-        onValueChange={(value)=>handleFilterClick(value)}
+        onValueChange={handleCategoryChange}
         
       >
-          {power_tool_categories.map((category, _index) => (
-                <FilterChip value={category} key={_index} handleFilterClick={handleFilterClick}>
+          {power_tool_categories.map((category, index) => (
+                <FilterChip value={category} key={index}>
                      {category}
                 </FilterChip>
             
@@ -99,19 +94,25 @@ function CatelogSidebar() {
         </div>
       </div>
       <Divider className="my-4" />
+      <Checkbox isSelected={isNotRented} onValueChange={handleIsNotRentedChange} size="sm">
+        Available for Rent
+      </Checkbox>
+      <Divider className="my-4" />
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-light">Price</span>
-        <Slider
+      <span className="text-xs font-light">Check availability</span>
+      <DateRangePicker
           size="sm"
-          step={0.01}
-          maxValue={1}
-          minValue={0}
-          aria-label="Temperature"
-          defaultValue={0.2}
-          className="max-w-md"
+          variant="faded"
+          className="text-sm"
+          value={selectedStartDate}
+          minValue={today(getLocalTimeZone())}
+          granularity="day"
+          label=""
+          description="Enter the date range"
+          onChange={setSelectedStartDate}
         />
       </div>
-      <Divider className="my-4" />
+      {/* <Divider className="my-4" />
       <div>
         <span className="text-xs font-light">Brands</span>
         <CheckboxGroup
@@ -124,7 +125,7 @@ function CatelogSidebar() {
             </Checkbox>
           ))}
         </CheckboxGroup>
-      </div>
+      </div> */}
     </div>
   );
 }

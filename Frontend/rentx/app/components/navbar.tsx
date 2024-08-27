@@ -1,33 +1,32 @@
 'use client'
 import React, { useEffect } from "react";
-import {Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Link, Button, Avatar, PopoverTrigger, Popover, PopoverContent, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Input} from "@nextui-org/react";
+import {Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Link, Button, Avatar, PopoverTrigger, Popover, PopoverContent, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Input, useDisclosure, Modal, ModalContent} from "@nextui-org/react";
 import { ThemeSwitcher } from "./theme-switcher";
 import { useSelector } from "react-redux";
 import { login, logout } from "../../lib/features/authSlice";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CHECK_AUTH, LOGOUT } from "@/api/auth";
 import { RootState } from "@/lib/store";
 import { setActiveTab } from "@/lib/features/navbarSlice";
 import { IoMdSearch } from "react-icons/io";
 import { useAppDispatch } from "@/lib/hooks";
 import { stopConnection } from "@/utils/signalrService";
-// import {AcmeLogo} from "assets/vercel.svg";
+import SignIn from "./signIn";
 
 export default function NavBar() {
   
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const router = useRouter()
-
   const menuItems = [
     {label:"Home",link:"/"},
     {label:"Rent tools",link:"/rent-tools"},
-    {label:"Become a renter",link:"#"},
     {label:"How it works",link:"#"},
   ];
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const activeNavBar = useSelector((state: RootState) => state.navbar.activeNavBar);
   const dispatch = useAppDispatch()
+  const {isOpen, onOpen, onClose, onOpenChange} = useDisclosure();
 
   const handleLogout = async ()=>{
     stopConnection();
@@ -85,6 +84,7 @@ export default function NavBar() {
 
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
       {menuItems.map((item, index) => (
+          !currentUser?.userRoles.includes("Renter") &&
           <NavbarItem key={`${item}-${index}`} >
             <Link
               color={activeNavBar===item.label.toLowerCase()?"primary":"foreground"}
@@ -150,21 +150,39 @@ export default function NavBar() {
               src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
             />
           </DropdownTrigger>
+          { currentUser &&
+         currentUser.userRoles.includes("Customer") ? 
           <DropdownMenu aria-label="Profile Actions" variant="flat">
             <DropdownItem key="profile" className="h-14 gap-2">
               <p className="font-semibold">{currentUser?.userName}</p>
               <p className="font-light text-xs">{currentUser?.email}</p>
             </DropdownItem>
-            <DropdownItem key="settings" onPress={handleSettingsClick}>My Settings</DropdownItem>
-            <DropdownItem key="team_settings">Team Settings</DropdownItem>
-            <DropdownItem key="analytics">Analytics</DropdownItem>
-            <DropdownItem key="system">System</DropdownItem>
-            <DropdownItem key="configurations">Configurations</DropdownItem>
-            <DropdownItem key="help_and_feedback">Help & Feedback</DropdownItem>
+         <DropdownItem key="settings" onPress={handleSettingsClick}>Account settings</DropdownItem>
+        
+           <DropdownItem key="my-rentals" href="/my-rentals">
+              My rentals
+            </DropdownItem>   
+                
+         
             <DropdownItem key="logout" color="danger" onPress={handleLogout}>
               Log Out
             </DropdownItem>
           </DropdownMenu>
+          :
+          <DropdownMenu aria-label="Profile Actions" variant="flat">
+            <DropdownItem key="profile" className="h-14 gap-2">
+              <p className="font-semibold">{currentUser?.userName}</p>
+              <p className="font-light text-xs">{currentUser?.email}</p>
+            </DropdownItem>
+         <DropdownItem key="settings" onPress={handleSettingsClick}>Account settings</DropdownItem>
+        
+                
+         
+            <DropdownItem key="logout" color="danger" onPress={handleLogout}>
+              Log Out
+            </DropdownItem>
+          </DropdownMenu>
+          }
         </Dropdown>
             {/* <Dropdown>
               <DropdownTrigger>
@@ -181,7 +199,8 @@ export default function NavBar() {
         :
           <div className="flex flex-row gap-2 items-center">
             <NavbarItem>
-              <Link href="/auth/sign-in">Login</Link>
+            <Button onPress={onOpen}>Login</Button>
+              {/* <Link href="/auth/sign-in">Login</Link> */}
             </NavbarItem>      
             {/* <NavbarItem>
               <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
@@ -194,20 +213,29 @@ export default function NavBar() {
         } 
       </NavbarContent>
       <NavbarMenu>
-        {menuItems.map((item, index) => (
-          <NavbarMenuItem key={`${item}-${index}`} >
+      {menuItems.map((item, index) => (
+          !currentUser?.userRoles.includes("Renter") &&
+          <NavbarItem key={`${item}-${index}`} >
             <Link
               color={activeNavBar===item.label.toLowerCase()?"primary":"foreground"}
-              className="w-full"
-              href="#"
-              size="lg"
+              href={item.link}
               onPress={()=>handleNavBarTabClick(item.label.toLowerCase())}
             >
               {item.label}
             </Link>
-          </NavbarMenuItem>
+          </NavbarItem>
         ))}
       </NavbarMenu>
+      <Modal 
+        backdrop="blur" 
+        isOpen={isOpen} 
+        onOpenChange={onOpenChange}
+        
+      >
+        <ModalContent>
+          <SignIn onClose={onClose}/>
+        </ModalContent>
+      </Modal>
     </Navbar>
   );
 }

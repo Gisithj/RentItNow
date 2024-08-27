@@ -1,5 +1,6 @@
 import React from "react";
 import { useCheckbox, Chip, VisuallyHidden, tv } from "@nextui-org/react";
+import { log } from "console";
 
 const checkbox = tv({
   slots: {
@@ -27,9 +28,9 @@ const checkbox = tv({
 interface FilterChipPros{
       children?: React.ReactNode;
     value: string
-    handleFilterClick: (value:any) => any
 }
-export const FilterChip = ({value, handleFilterClick}:FilterChipPros) => {
+
+export const FilterChip = (props:FilterChipPros) => {  
   const {
     children,
     isSelected,
@@ -37,17 +38,23 @@ export const FilterChip = ({value, handleFilterClick}:FilterChipPros) => {
     getBaseProps,
     getLabelProps,
     getInputProps,
-  } = useCheckbox({});
+  } = useCheckbox({
+    ...props
+  })
   // console.log("isslected",isSelected);
   
   const styles = checkbox({ isSelected, isFocusVisible });
-  const handleChipClick = () => {
-    handleFilterClick(value);
-  };
+  // const handleChipClick = () => {
+  //   handleFilterClick(value);
+  // };
+  
+  
+  
+  
   return (
     <label {...getBaseProps()}>
       <VisuallyHidden>
-        <input {...getInputProps()}/>
+        <input {...getInputProps()} />
       </VisuallyHidden>
       <Chip
         classNames={{
@@ -60,7 +67,8 @@ export const FilterChip = ({value, handleFilterClick}:FilterChipPros) => {
         variant="faded"
         
       >
-        {value ? value : isSelected ? "Enabled" : "Disabled"}
+        {/* {value} */}
+        {children ? children : isSelected ? "Enabled" : "Disabled"}
       </Chip>
     </label>
     // <label {...getBaseProps()}>

@@ -73,12 +73,13 @@ internal class Program
                 }
             };
         })
-        //.AddGoogle(options =>
-        //{
-        //    options.ClientId = "604527366317-u7t19epden2etnr0m5h4jum6ir634fnd.apps.googleusercontent.com";
-        //    options.ClientSecret = "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";
-        //    options.CallbackPath = "/api/Auth/google-callback";
-        //})
+        // .AddGoogle(options =>
+        // {
+        //     options.ClientId = "604527366317-u7t19epden2etnr0m5h4jum6ir634fnd.apps.googleusercontent.com";
+        //     options.ClientSecret = "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";
+        //     options.CallbackPath = "/api/Auth/google-callback";
+        // })
+
         ;
         builder.Services.AddAuthorization();
         builder.Services.AddControllers();
