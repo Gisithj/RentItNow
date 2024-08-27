@@ -24,7 +24,7 @@ namespace RentItNow.Helpers
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, userId),
+                    new Claim(ClaimTypes.NameIdentifier, userId),
                     new Claim(ClaimTypes.Email, userEmail),
                     new Claim(ClaimTypes.Role, role), 
                 };

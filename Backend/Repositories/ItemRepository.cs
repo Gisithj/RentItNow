@@ -83,7 +83,6 @@ namespace RentItNow.Repositories
             }
 
         }
-
         public async Task<IEnumerable<Item>> GetAllAvailableItemsByDateRangeWithInclude(
             DateTimeOffset rentalStartDate, 
             DateTimeOffset rentalEndDate,

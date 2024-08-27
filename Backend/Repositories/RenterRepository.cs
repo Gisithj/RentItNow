@@ -15,6 +15,19 @@ namespace RentItNow.Repositories
 
         }
 
+        public async Task<IEnumerable<Renter>> GetAllRentersWithUserAsync()
+        {
+            try
+            {
+                var renters = await dbSet.Include(r => r.User).ToListAsync();
+                return renters.AsEnumerable();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
         public async Task<Renter> GetRenterByUsernameAsync(string renterName)
         {
 

@@ -62,6 +62,7 @@ namespace RentItNow.Controllers
                 var authClaims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     };
 
@@ -236,6 +237,7 @@ namespace RentItNow.Controllers
                     var authClaims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
                         new Claim("customerId",customerCreated.CustomerId.ToString()),
                         new Claim(ClaimTypes.Role,UserRoles.Customer),
                         new Claim(ClaimTypes.Role,UserRoles.User),
@@ -318,6 +320,7 @@ namespace RentItNow.Controllers
                     var authClaims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
                         new Claim("renterId",renterCreated.RenterId.ToString()),
                         new Claim(ClaimTypes.Role,UserRoles.Renter),
                         new Claim(ClaimTypes.Role,UserRoles.User),

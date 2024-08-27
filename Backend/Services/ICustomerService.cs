@@ -8,8 +8,8 @@ namespace RentItNow.Services
 {
     public interface ICustomerService
     {
-   
-       
+
+        public Task<IEnumerable<Customer>> GetAllCustomersAsync();
 
     }
 }

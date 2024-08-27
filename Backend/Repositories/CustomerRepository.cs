@@ -12,65 +12,19 @@ namespace RentItNow.Repositories
         {
         }
 
-        /*        public override async Task<Customer> AddAsync(Customer entity)
-                {
-                    try
-                    {
-                        var customer = await dbSet.AddAsync(entity);
-                        return customer.Entity;
-                    }
-                    catch (Exception ex)
-                    {
+        public async Task<IEnumerable<Customer>> GetAllCustomersWithUserAsync()
+        {
+            try
+            {
+                var customer = await dbSet.Include(r => r.User).ToListAsync();
+                return customer.AsEnumerable();
+            }
+            catch (Exception)
+            {
 
-                        throw new Exception(ex.Message);
-                    }
-                }*/
-
-        /*  public override Task<bool> DeleteAsync(Guid id)
-          {
-              return base.DeleteAsync(id);
-          }*/
-
-        /*        public override Task<IEnumerable<Customer>> FindAsync(Expression<Func<Customer, bool>> predicate)
-                {
-                    return base.FindAsync(predicate);
-                }*/
-
-        /*        public override async Task<IEnumerable<Customer>> GetAllAsync()
-                {
-                    try
-                    {
-                        var customers = await dbSet.ToListAsync();
-                        if (customers.Count == 0)
-                        {
-                            throw new Exception("Customers not found");
-                        }
-                        return customers;
-                    }
-                    catch (Exception ex)
-                    {
-
-                        throw new Exception(ex.Message);
-                    }
-                }*/
-
-        /*        public override async Task<Customer> GetByIdAsync(Guid id)
-                {
-                    try
-                    {
-                        var customer = await dbSet.FindAsync(id);
-                        if (customer == null)
-                        {
-                            throw new Exception("Customer not found");
-                        }
-                        return customer;
-                    }
-                    catch (Exception ex)
-                    {
-
-                        throw new Exception(ex.Message);
-                    }
-                }*/
+                throw;
+            }
+        }
 
         public async Task<Customer> GetCustomerByUsernameAsync(string customerName)
         {
@@ -115,7 +69,7 @@ namespace RentItNow.Repositories
         {
             try
             {
-                var customer = await _context.Customers
+                var customer = await dbSet
                .Include(c => c.RentedItems)
                .FirstOrDefaultAsync(c => c.CustomerId == customerId);
 
