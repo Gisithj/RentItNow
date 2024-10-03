@@ -12,16 +12,42 @@ namespace RentItNow.Repositories
             
         }
 
+        public async Task<IEnumerable<Chat>> GetAllChatsByUserId(string userId)
+        {
+            try
+            {
+                var chats = await dbSet
+                    .Where(s => s.SenderId == userId || s.ReceiverId == userId)
+                    .Include(s=>s.Sender)
+                    .Include(s => s.Receiver)
+                    .ToListAsync();
+                if (chats == null)
+                {
+                    return null;
+                }
+                return chats;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         public async Task<Chat> GetChatBySenderAndReceiverId(string senderId, string receiverId)
         {
             try
             {
-                var chat = await dbSet.FirstOrDefaultAsync(s => s.SenderId == senderId && s.ReceiverId == receiverId);
-                if(chat == null)
+                
+                var isChatExist = await dbSet.AnyAsync(s => (s.SenderId == senderId && s.ReceiverId == receiverId) || (s.SenderId == receiverId && s.ReceiverId == senderId));
+                if (!isChatExist)
                 {
                     return null;
                 }
-                return chat;
+                else
+                {
+                    var chat = await dbSet.FirstOrDefaultAsync(s => (s.SenderId == senderId && s.ReceiverId == receiverId) || (s.SenderId == receiverId && s.ReceiverId == senderId));
+
+                    return chat;
+                }
             }
             catch (Exception)
             {

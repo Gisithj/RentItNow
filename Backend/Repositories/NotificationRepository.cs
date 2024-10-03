@@ -31,7 +31,10 @@ namespace RentItNow.Repositories
         {
             try
             {
-                var notifications = await dbSet.Where(n => n.UserId == userId && n.IsNotificationRead==false).ToListAsync();
+                var notifications = await dbSet
+                    .Where(n => n.UserId == userId && n.IsNotificationRead==false)
+                    .OrderByDescending(n => n.CreatedAt)
+                    .ToListAsync();
                 return notifications.AsEnumerable();
             }
             catch (Exception e)

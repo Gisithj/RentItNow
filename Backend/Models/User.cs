@@ -10,7 +10,7 @@ namespace RentItNow.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]*/
      /*   public Guid UserId { get; set; }*/
         public override string? PasswordHash { get; set; }
-        
+        public string PictureUrl { get; set; } = string.Empty;
 
     }
 }

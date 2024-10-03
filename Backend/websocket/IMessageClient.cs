@@ -7,10 +7,10 @@ namespace RentItNow.websocket
     {
         Task UpdateUser(Messages message);
         Task SendMessageToRenter(Guid itemId, Guid customerId);
-
         Task NewMessage(MessageDto message);
         Task MessageRead(string receiverId,string senderId);
-        Task MessageStatusUpdate(IEnumerable<MessageDto> messages);
+        Task MessageStatusUpdate(List<MessageDto> messages);
         Task NotificationUpdate();
+        Task RentalStatusNotification(string message);
     }
 }

@@ -14,6 +14,23 @@ namespace RentItNow.Services
         {
             _unitOfWork = unitOfWork;
         }
+
+        public async Task<Customer> GetCustomerById(Guid id) {             
+            try
+            {
+                var customer = await _unitOfWork.Customer.GetByIdAsync(id);
+                if (customer == null)
+                {
+                    throw new Exception("customer not found");
+                }
+                return customer;
+            }
+                       catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+        }
         public async Task<IEnumerable<Customer>> GetAllCustomersAsync()
         {
 

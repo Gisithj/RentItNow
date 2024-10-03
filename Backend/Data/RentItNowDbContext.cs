@@ -78,6 +78,12 @@ namespace RentItNow.Data
                 .HasForeignKey(c => c.ReceiverId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<RenterConfig>()
+                .HasOne(r=>r.Renter)
+                .WithOne()
+                .HasForeignKey<RenterConfig>(r=>r.RenterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
 
         }
         public override DbSet<User> Users => Set<User>();
@@ -90,6 +96,7 @@ namespace RentItNow.Data
         public DbSet<Messages> Messages => Set<Messages>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<Chat> Chats => Set<Chat>();
+        public DbSet<RenterConfig> RenterConfigs => Set<RenterConfig>();
 
     }
 }

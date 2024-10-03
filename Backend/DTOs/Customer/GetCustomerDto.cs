@@ -12,7 +12,7 @@ namespace RentItNow.DTOs.Customer
         public string ContactNo { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
 
-        public Guid? UserId { get; set; }
-     
+        public string UserId { get; set; } = string.Empty;
+
     }
 }

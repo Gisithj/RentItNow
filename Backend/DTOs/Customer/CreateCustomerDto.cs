@@ -11,14 +11,13 @@ namespace RentItNow.DTOs.Customer
         public string Name { get; set; } = string.Empty;
         [Required(ErrorMessage = "Email is required")]
         public string Email { get; set; } = string.Empty;
-        [Required(ErrorMessage = "ContactNo is required")]
         public string ContactNo { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Address is required")]
         public string Address { get; set; } = string.Empty;
         [Required(ErrorMessage = "User Name is required")]
         public string UserName { get; set; } = string.Empty;
         [Required(ErrorMessage = "Password is required")]
         public string Password { get; set; } = string.Empty;
+        public string? PictureUrl { get; set; }
 
     }
 }

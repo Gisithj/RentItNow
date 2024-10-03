@@ -23,7 +23,13 @@ namespace RentItNow.configurations
         public IMessageRepository Messages { get; set; }
         public INotificationRepository Notification { get; set; }
         public IChatRepository Chat { get; set; }
-        public UnitOfWork(RentItNowDbContext context, IMapper mapper, UserManager<User> userManager, SignInManager<User> signInManager, ILoggerFactory loggerFactory)
+        public IRenterConfigRepository RenterConfig { get; set; }
+        public UnitOfWork(
+            RentItNowDbContext context, 
+            IMapper mapper, 
+            UserManager<User> userManager, 
+            SignInManager<User> signInManager, 
+            ILoggerFactory loggerFactory)
         {
             _context = context;
             _mapper = mapper;
@@ -36,6 +42,7 @@ namespace RentItNow.configurations
             Messages = new MessageRepository(context, loggerFactory.CreateLogger<GenericRepository<Messages>>());
             Notification = new NotificationRepository(context, loggerFactory.CreateLogger<GenericRepository<Notification>>());
             Chat = new ChatRepository(context, loggerFactory.CreateLogger<GenericRepository<Chat>>());
+            RenterConfig = new RenterConfigRepository(context, loggerFactory.CreateLogger<GenericRepository<RenterConfig>>());
             _loggerFactory = loggerFactory;
         }
         public async Task CompleteAsync()

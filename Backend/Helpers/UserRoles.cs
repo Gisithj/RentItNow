@@ -7,5 +7,8 @@
         public const string Customer = "Customer";
         public const string Renter = "Renter";
         
+
     }
+
+
 }

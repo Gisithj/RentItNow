@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Execution;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using RentItNow.Services;
 using System;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
 using System.Security.Claims;
 
 namespace RentItNow.websocket
@@ -42,15 +44,19 @@ namespace RentItNow.websocket
             //await Clients.All.SendOffersToUser(message);
         }
 
-        private static readonly ConcurrentDictionary<Guid, string> connections = new ConcurrentDictionary<Guid, string>();
-        private static readonly ConcurrentDictionary<Guid, string> CustomerConnections = new ConcurrentDictionary<Guid, string>();
+        private static readonly ConcurrentDictionary<string, string> connections = new ConcurrentDictionary<string, string>();
 
         public override async Task OnConnectedAsync()
         {
             var httpContext = Context.GetHttpContext();
 
-            // Read the token from the cookie
-            var token = httpContext!.Request.Cookies["token"];
+            var token = httpContext?.Request.Cookies["token"];
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Context.Abort();
+                return;
+            }
 
             // Validate the token and extract the claims
             var handler = new JwtSecurityTokenHandler();
@@ -61,7 +67,7 @@ namespace RentItNow.websocket
                 {
                    if(claim.Type == ClaimTypes.NameIdentifier)
                     {
-                        connections.TryAdd(Guid.Parse(claim.Value), Context.ConnectionId);
+                        connections.TryAdd(claim.Value, Context.ConnectionId);
                     }
                 });
             }
@@ -74,18 +80,20 @@ namespace RentItNow.websocket
             var httpContext = Context.GetHttpContext();
 
             // Read the token from the cookie
-            var token = httpContext!.Request.Cookies["token"];
+            var token = httpContext.Request.Cookies["token"];
+            if (!string.IsNullOrEmpty(token))
+            {
+                // Validate the token and extract the claims
+                var handler = new JwtSecurityTokenHandler();
+                var jwtToken = handler.ReadJwtToken(token);
+                var userIdClaim = jwtToken.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier);
 
-            // Validate the token and extract the claims
-            var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(token);
-            var userIdClaim = jwtToken.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier);
-
-            // Parse the renterId from the claim
-            var userId = Guid.Parse(userIdClaim.Value);
-
-            // Remove the mapping when the connection is closed
-            connections.TryRemove(userId, out _);
+                if (userIdClaim != null)
+                {
+                    var userId = userIdClaim.Value;
+                    connections.TryRemove(userId, out _);
+                }
+            }
 
             await base.OnDisconnectedAsync(exception);
         }
@@ -113,39 +121,37 @@ namespace RentItNow.websocket
                     };
                     chat = await _chatService.CreateChat(newChat);
                 }
-                else
-                {
-
-                }
 
                 message.Timestamp = DateTime.UtcNow;
                 message.ChatId = chat.Id;
                 await _messageService.AddMessage(message);
+                await _chatService.UpdateUnreadCount(message.ChatId, 1);
                 var returnMessageDto = _mapper.Map<Messages, MessageDto>(message);
                 // Determine the recipient's connection ID
                 string connectionId;
-                if (connections.TryGetValue(Guid.Parse(messageDto.ReceiverId), out connectionId))
+                if (connections.TryGetValue(messageDto.ReceiverId, out connectionId))
                 {
 
                     // Send the message to the specific recipient
                     await Clients.Client(connectionId).NewMessage(returnMessageDto);
-                    await Clients.Caller.NewMessage(returnMessageDto);
+
 
                 }
-                else
-                {
-                    Notification newNotification = new Notification()
-                    {
-                        UserId = messageDto.ReceiverId,
-                        SenderId = messageDto.SenderId,
-                        Message = "You have a new message from " + sender.UserName,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _chatService.UpdateUnreadCount(chat.Id,1);
-                    var notification = await _notificationService.AddNotification(newNotification);                    
-                    await Clients.Caller.NewMessage(returnMessageDto);
+                await Clients.Caller.NewMessage(returnMessageDto);
 
-                }
+                //else
+                //{
+                //    Notification newNotification = new Notification()
+                //    {
+                //        UserId = messageDto.ReceiverId,
+                //        SenderId = messageDto.SenderId,
+                //        Message = "You have a new message from " + sender.UserName,
+                //        CreatedAt = DateTime.UtcNow
+                //    };
+                //    var notification = await _notificationService.AddNotification(newNotification);                    
+                //await Clients.Caller.NewMessage(returnMessageDto);
+
+                //}
             }
             catch (Exception e)
             {
@@ -157,18 +163,23 @@ namespace RentItNow.websocket
             try
             {
                 var messages = await _messageService.MarkAllUnreadMessagesById(senderId, receiverId);
-                Chat chat = await _chatService.GetChatBySenderAndReceiverId(senderId,receiverId);
-                if(chat != null)
-                {
-                    await _chatService.UpdateUnreadCount(chat.Id);
-                }
+                
                 string connectionId;
-                if (connections.TryGetValue(Guid.Parse(senderId), out connectionId))
+                if (connections.TryGetValue(senderId, out connectionId))
                 {
-
+                    if(connectionId != Context.ConnectionId)
+                    {
+                        Chat chat = await _chatService.GetChatBySenderAndReceiverId(senderId, receiverId);
+                        if (chat != null)
+                        {
+                            await _chatService.UpdateUnreadCount(chat.Id);
+                        }
+                    }
                     // Send the message to the specific recipient
-                    var returnMessagesDto = _mapper.ProjectTo<MessageDto>(messages.AsQueryable());
-                    await Clients.Client(connectionId).MessageStatusUpdate(returnMessagesDto);
+                    var returnMessagesDto = _mapper.ProjectTo<MessageDto>(messages.AsQueryable()).ToList();
+
+                    await Clients.Client(connectionId).MessageStatusUpdate(returnMessagesDto.ToList());
+                    await Clients.Caller.MessageStatusUpdate(returnMessagesDto.ToList());
                 }
             }
             catch (Exception e)
@@ -190,7 +201,10 @@ namespace RentItNow.websocket
             }
         }
 
-
-
+        public static string? GetConnectionId(string userId)
+        {
+            connections.TryGetValue(userId, out var connectionId);
+            return connectionId;
+        }
     }
 }

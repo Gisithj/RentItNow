@@ -17,10 +17,11 @@ namespace RentItNow.Helpers
             _configuration = configuration;
         }
 
-        public string GenerateJwtToken(string userId, string userEmail,int tokenExpirationDays,string role)
+        public async Task<string> GenerateJwtToken(string userId, string userEmail,int tokenExpirationDays,string role)
         {
-            
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+            return await Task.Run(() =>
+            {
+                var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new List<Claim>
                 {
@@ -31,7 +32,7 @@ namespace RentItNow.Helpers
 
             var Sectoken = new JwtSecurityToken(
                 _configuration["JwtSettings:Issuer"],
-               _configuration["JwtSettings:Issuer"],
+               _configuration["JwtSettings:Audience"],
                 claims,
                expires: DateTime.Now.AddMinutes(tokenExpirationDays),
                signingCredentials: credentials);
@@ -39,33 +40,35 @@ namespace RentItNow.Helpers
             var token = new JwtSecurityTokenHandler().WriteToken(Sectoken);
 
             return token;
-          
-        }
-        public string GenerateJwtToken(List<Claim> authClaims, int tokenExpirationDays)
-        {
+            });
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        }
+        public async Task<string> GenerateJwtToken(List<Claim> authClaims, int tokenExpirationDays)
+        {
+            return await Task.Run(() =>
+            {
+                var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+                var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             
 
-            var Sectoken = new JwtSecurityToken(
-                _configuration["JwtSettings:Issuer"],
-               _configuration["JwtSettings:Issuer"],
-                authClaims,
-               expires: DateTime.Now.AddMinutes(tokenExpirationDays),
-               signingCredentials: credentials);
+                var Sectoken = new JwtSecurityToken(
+                    _configuration["JwtSettings:Issuer"],
+                   _configuration["JwtSettings:Audience"],
+                    authClaims,
+                   expires: DateTime.Now.AddMinutes(tokenExpirationDays),
+                   signingCredentials: credentials);
 
-            var token = new JwtSecurityTokenHandler().WriteToken(Sectoken);
+                var token = new JwtSecurityTokenHandler().WriteToken(Sectoken);
 
-            return token;
-
+                return token;
+            });
         }
 
 
         public (bool isAuthenticated, JwtSecurityToken? validatedToken) ValidateJwtToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Key"]);
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
 
             try
             {
@@ -76,8 +79,8 @@ namespace RentItNow.Helpers
                     ValidateIssuerSigningKey = true,
                     ValidateLifetime=true,
                     ValidIssuer = _configuration["JwtSettings:Issuer"],
-                    ValidAudience = _configuration["JwtSettings:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidAudience = _configuration["JwtSettings:Audience"],
+                    IssuerSigningKey = securityKey,
                     // Additional validation parameters as needed
                 }, out var validatedToken);
 

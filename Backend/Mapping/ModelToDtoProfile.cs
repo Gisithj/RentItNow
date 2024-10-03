@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using RentItNow.DTOs;
+using RentItNow.DTOs.Chat;
 using RentItNow.DTOs.Customer;
 using RentItNow.DTOs.Item;
 using RentItNow.DTOs.Message;
@@ -19,13 +20,13 @@ namespace RentItNow.Mapping
 
             CreateMap<IdentityUser, User>().ReverseMap();
             CreateMap<IdentityUser, GetUserDto>().ReverseMap();
-
+            CreateMap<User, GetUserDto>().ReverseMap();
 
             CreateMap<CreateRenterDto, User>().ReverseMap();
             CreateMap<CreateRenterDto, Renter>().ReverseMap();
             CreateMap<CreateRenterDto, CreateUserDto>().ReverseMap();
             CreateMap<Renter, GetRenterDto>()
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User != null ? (Guid?)Guid.Parse(src.User.Id) : null))
+                //.ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User != null ? (Guid?)Guid.Parse(src.User.Id) : null))
                 .ReverseMap();
             CreateMap<Renter, UpdateRenterDto>().ReverseMap();
 
@@ -71,6 +72,10 @@ namespace RentItNow.Mapping
 
             CreateMap<MessageDto, Messages>().ReverseMap();
 
+            CreateMap<Chat, ChatDto>()
+                .ReverseMap();
+            CreateMap<CreateChatDto, Chat>()
+                .ReverseMap();
         }
     }
 }

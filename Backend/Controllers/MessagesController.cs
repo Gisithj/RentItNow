@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNet.SignalR.Messaging;
+﻿using AutoMapper;
+using Microsoft.AspNet.SignalR.Messaging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
+using RentItNow.DTOs.Chat;
 using RentItNow.DTOs.Customer;
+using RentItNow.DTOs.Message;
 using RentItNow.DTOs.Notification;
 using RentItNow.Models;
 using RentItNow.Services;
@@ -19,33 +22,66 @@ namespace SignalRDemo.Controllers
     {
         private IHubContext<RentalRequestHub, IMessageClient> _messageHub;
         private readonly IMessageService _messageService;
+        private readonly IChatService _chatService;
         private readonly INotificationService _notificationService;
-        public MessageController(IHubContext<RentalRequestHub, IMessageClient> messageHub, IMessageService messageService, INotificationService notificationService)
+        private readonly IMapper _mapper;
+        public MessageController(
+                IHubContext<RentalRequestHub, 
+                IMessageClient> messageHub, 
+                IMessageService messageService, 
+                INotificationService notificationService, 
+                IChatService chatService,
+                IMapper mapper)
         {
             _messageHub = messageHub;
             _messageService = messageService;
             _notificationService = notificationService;
+            _chatService = chatService;
+            _mapper = mapper;
         }
-        [HttpPost]
-        [Route("productoffers")]
-        public async Task<string> GetAsync(Guid customerid,Guid itemId)
-        {
-            //messageHub.Clients.All.SendOffersToUser(offer);
-            //await messageHub.Clients.All.SendRentalRequestToRenter(itemId, customerid);
-            return "Offers sent successfully to all users!";
-        }
-        [HttpGet("GetPreviousChatMessage")]
-        public async Task<ActionResult<IEnumerable<Messages>>> GetPreviousChatMessagesAsync(string senderId, string receiverID)
+
+        [HttpPost("CreateChat")]
+        public async Task<ActionResult<ChatDto>> CreateChatAsync(CreateChatDto chatDto)
         {
             try
             {
-                var messages = await _messageService.GetAllChatMessagesBytIds(senderId, receiverID);
-                return messages.ToList();
+                var chat = _mapper.Map<Chat>(chatDto);
+                var chatResult = await _chatService.CreateChat(chat);
+                return _mapper.Map<ChatDto>(chatResult);
             }
-            catch (Exception)
+            catch (Exception e)
+            {
+                return StatusCode(500, $"Internal server error: {e.Message}");
+            }
+        }
+
+        [HttpGet("GetAllChatsByUserId")]
+        public async Task<ActionResult<IEnumerable<ChatDto>>> GetAllChatsByUserIdAsync(string userId)
+        {
+            try
+            {
+                var chats = await _chatService.GetAllChatsByUserId(userId);
+                return _mapper.ProjectTo<ChatDto>(chats.AsQueryable()).ToList();
+            }
+            catch (Exception e)
             {
 
-                throw;
+                return StatusCode(500, $"Internal server error: {e.Message}");
+            }
+        }
+        [HttpGet("GetPreviousChatMessage")]
+        public async Task<ActionResult<IEnumerable<MessageDto>>> GetPreviousChatMessagesAsync(Guid chatId)
+        {
+            try
+            {
+                var messages = await _messageService.GetAllChatMessagesByChatId(chatId);
+                var messagesDtos = _mapper.ProjectTo<MessageDto>(messages.AsQueryable()).ToList();
+                return messagesDtos.ToList();
+            }
+            catch (Exception e)
+            {
+
+                return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
 
@@ -57,10 +93,10 @@ namespace SignalRDemo.Controllers
                 var messages = await _notificationService.GetAllNotificationsByUserId(userId);
                 return messages.ToList();
             }
-            catch (Exception)
+            catch (Exception e)
             {
 
-                throw;
+                return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
         [HttpPost("MarkNotificationAsRead")]
@@ -72,10 +108,10 @@ namespace SignalRDemo.Controllers
                 await _messageHub.Clients.Client(connectionId).NotificationUpdate();
                 return Ok("Notification marked as read.");
             }
-            catch (Exception)
+            catch (Exception e)
             {
 
-                throw;
+                return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
         [HttpPost("MarkAllNotificationsAsRead")]
@@ -91,10 +127,10 @@ namespace SignalRDemo.Controllers
                 await _messageHub.Clients.Client(MarkAllNotificationReadDto.ConnectionId).NotificationUpdate();
                 return Ok("All notifications marked as read.");
             }
-            catch (Exception)
+            catch (Exception e)
             {
 
-                throw;
+                return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
     }

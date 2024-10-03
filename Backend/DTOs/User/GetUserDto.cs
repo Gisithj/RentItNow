@@ -7,5 +7,6 @@
         public string Email { get; set; } = string.Empty;
         public string? roleId { get; set; } = string.Empty;
         public ICollection<string> UserRoles { get; set; } = new List<string>();
+        public string? PictureUrl { get; set; }
     }
 }
