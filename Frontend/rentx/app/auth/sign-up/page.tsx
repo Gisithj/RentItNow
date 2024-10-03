@@ -1,13 +1,14 @@
 'use client'
-import { REGISTER_CUSTOMER } from '@/api/auth';
+import { REGISTER_CUSTOMER, REGISTER_RENTER } from '@/api/auth';
 import NavBar from '@/app/components/navbar'
 import { login } from '@/lib/features/authSlice';
 import { useAppDispatch } from '@/lib/hooks';
 import { startConnection } from '@/utils/signalrService';
 import { passowrdError, validateEmail, validatePassword } from '@/utils/validation-helper';
-import { Button, Input, Progress } from '@nextui-org/react'
-import { useRouter } from 'next/navigation';
+import { Button, Input, Link, Progress } from '@nextui-org/react'
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { useMemo, useState } from 'react'
+import { FcGoogle } from 'react-icons/fc';
 import { MdOutlineArrowBackIos, MdOutlineArrowForwardIos } from 'react-icons/md';
 import { VscEye, VscEyeClosed } from 'react-icons/vsc';
 function SignUp() {
@@ -26,6 +27,10 @@ function SignUp() {
   //const [valueHouseNo, setValuePassword] = useState(""); 
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const searchParams = useSearchParams();
+  console.log(searchParams);
+  
+  const userType = searchParams.get('userType');
 
   const isInvalidEmail = useMemo(() => {
     if (valueEmail === "") return false;
@@ -70,6 +75,11 @@ function SignUp() {
     
     if(currentStep==totalSteps){
       try {
+        console.log(userType);
+        
+        if(userType === "renter"){
+          console.log("in the renter register");
+          
         const newCustomer = {
           "name": valueFirstName+valueLastName ,
           "email": valueEmail,
@@ -78,14 +88,29 @@ function SignUp() {
           "userName":valueFirstName+valueLastName ,
           "password": valuePassword
         }
-        console.log(newCustomer);
+          const responseData = await REGISTER_RENTER(newCustomer)
+          if( responseData?.status===200){ 
+            dispatch(login())  
+            router.push("/dashboard/home") 
+          } 
+        }else if(userType === "customer"){
+          console.log("in the customer register");
+          
+        const newCustomer = {
+          "name": valueFirstName+valueLastName ,
+          "email": valueEmail,
+          "contactNo": valueMobileNo,
+          "address":valueAddress ,
+          "userName":valueFirstName+valueLastName ,
+          "password": valuePassword
+        }
+          const responseData = await REGISTER_CUSTOMER(newCustomer)
+          if( responseData?.status===200){ 
+            dispatch(login())  
+            router.push("/rent-tools") 
+          } 
+        }
         
-        const responseData = await REGISTER_CUSTOMER(newCustomer)
-        if( responseData?.status===200){ 
-          dispatch(login())  
-          startConnection();
-          router.push("/") 
-        } 
         
       } catch (error) {
         console.log(error);
@@ -112,7 +137,7 @@ function SignUp() {
               
             </div>
           </div>
-          <form action="" className='flex flex-col gap-4 w-full'>
+          <form action="" className='flex flex-col gap-4 w-full items-center'>
           {currentStep==1?<div className="flex flex-col gap-4 w-full">
             <div className="flex gap-4">
               <Input 
@@ -230,11 +255,23 @@ function SignUp() {
           }
           {
             currentStep==totalSteps?
-              <Button color='primary' onClick={handleStepChange}>Sign up</Button>
+              <Button color='primary' onClick={handleStepChange} className='w-full'>Sign up</Button>
             :
-              <Button color='primary' onClick={handleStepChange}>Next</Button>
+              <Button color='primary' onClick={handleStepChange} className='w-full'>Next</Button>
           }
-          
+          <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
+                    <span className="text-gray-500 text-sm px-2 bg-black">or Sign up with</span>
+                  </div>
+                  <Button 
+                      as={Link} 
+                      color="primary" 
+                      href="https://localhost:44375/api/Auth/signin-google?usertype=customer" 
+                      variant="bordered" 
+                      startContent={<FcGoogle size={20}/>}
+                      className='w-full'>
+                  Sign up with Google
+                </Button>
+                <p>Already have an account? <Link href="/auth/sign-in">Sign in</Link></p>
           </form>
         </div>
       </div>

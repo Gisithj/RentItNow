@@ -110,7 +110,7 @@ function ManageListings() {
             <>
               <ModalHeader className="flex flex-col gap-1"/>
               <ModalBody className="flex flex-col items-center text-center">
-                {!isDeleteConfirmed?
+                {!isDeleteConfirmed && !isDeleted?
                 <>
                 <h1 className="text-xl font-medium">
                   Are you sure you want to delete this item?
@@ -119,13 +119,18 @@ function ManageListings() {
                 </>
                 :
                 !isDeleted ?
+                <>
                 <CircularProgress color="default" aria-label={'Deleting the item...'}/>
+                <h1 className="text-xl font-medium">
+                  Your item is being deleted...
+                </h1>
+                </>
                 :
                 <>
                 <FaCircleCheck fontSize={30} className="text-success"/>
                 
                 <h1 className="text-xl font-medium">
-                  {!isDeleted?'Deleting the item...':'Your item is deleted successfully!!'}
+                  Your item is successfully deleted!!
                 </h1>
                 </>
                }

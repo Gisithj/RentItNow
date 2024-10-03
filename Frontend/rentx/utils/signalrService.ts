@@ -17,6 +17,7 @@ const getConnectionId = async () => {
         }
         return connection.connectionId;
     };
+
 const stopConnection =  () => connection.stop().catch(err => console.error(err.toString()));
 
 

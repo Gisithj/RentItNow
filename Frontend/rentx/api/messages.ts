@@ -1,16 +1,25 @@
 import api from "@/utils/api";
-export const GET_ALL_CHATS_BY_USERID = async (senderId:string,receiverId:string) => {
+import { CreateChat } from "@/utils/interfaces";
+
+export const CREATE_CHAT = async (chat:CreateChat) => {
     try {
-        const response  = await api.get('/Message/GetAllChatsByUserId');
+        const response  = await api.post('/Message/CreateChat',chat);
         return response.data;
     } catch (error) {
-        console.log("error fetching previous chat");
-        
+        console.log("error fetching previous chat");        
     }
 };
-export const GET_PREVIOUS_CHAT = async (senderId:string,receiverId:string) => {
+export const GET_ALL_CHATS_BY_IDS = async (userId:string) => {
     try {
-        const response  = await api.get(`/Message/GetPreviousChatMessage?senderId=${senderId}&receiverID=${receiverId}`);
+        const response  = await api.get(`/Message/GetAllChatsByUserId?userId=${userId}`);
+        return response.data;
+    } catch (error) {
+        console.log("error fetching previous chat");        
+    }
+};
+export const GET_PREVIOUS_CHAT = async (chatId:string) => {
+    try {
+        const response  = await api.get(`/Message/GetPreviousChatMessage?chatId=${chatId}`);
         return response.data;
     } catch (error) {
         console.log("error fetching previous chat");

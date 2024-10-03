@@ -2,7 +2,7 @@ import { Button, Chip, ChipProps, CircularProgress, Dropdown, DropdownItem, Drop
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import RentalReqest from './rental-request-card';
 import { HubConnectionBuilder } from '@microsoft/signalr/dist/esm/HubConnectionBuilder';
-import { connection, subscribeToOffers } from '@/utils/signalrService';
+import { connection } from '@/utils/signalrService';
 import { END_RENT_ITEM } from '@/api/item';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
@@ -16,6 +16,7 @@ import { CustomerRentalItem, RentalItem } from '@/utils/interfaces';
 import { BsThreeDots } from 'react-icons/bs';
 import { EyeIcon, EditIcon, DeleteIcon } from 'lucide-react';
 import { FiDelete } from 'react-icons/fi';
+import { AxiosError } from 'axios';
 
 const statusColorMap: Record<string, ChipProps["color"]> = {
   Rented: "success",
@@ -211,7 +212,6 @@ function RentalRequests() {
     []
   );
   const handleEndRentalModelOpen = (itemId:string,rentalId:string)=>{
-    console.log("in EndRental model open");
     setIsRentalEnded(false);
     setIsEndRentalConfirmed(false)    
     setRentalRequest({itemId: itemId, rentalId: rentalId})    
@@ -235,37 +235,16 @@ function RentalRequests() {
       setIsRentalEnded(true);
     });
    }else{
-      console.log("user not found");
-    
+      console.log("user not found");    
    }
   }
   useEffect(() => {
     if(user){
-      dispatch(fetchRentedItemsByRoleId(user.roleId));
-      console.log("in herer");
-      console.log(rentalRequestList);
-      
+      dispatch(fetchRentedItemsByRoleId(user.roleId));      
     }
   }, [user]);
 
-//     let connection = new HubConnectionBuilder()
-//     .withUrl("https://localhost:44375/chat", { withCredentials: true })
-//     .build();
 
-// connection.start()
-//     .then(function () {
-//         console.log("connected");
-//        // connection.invoke("SendRentalRequestToRenter", "31BE38E3-2F0B-4638-BD57-08DC57186DBB","7FA8F11F-8BE2-4B8C-14AE-08DC56CB133A")
-//     // .catch(err => console.error("Error sending request:", err));
-//     })
-//     .catch(function (err) {
-//         return console.error(err.toString());
-//     });
-
-  
-// connection.on("SendOffersToUser", function(message) {
-//   console.log(message);
-// });
 type StatusCounts = Record<string, number>;
 
 const statusCounts = statusOptions.reduce((acc: StatusCounts, status) => {
@@ -297,7 +276,7 @@ const bottomContent = useMemo(() => {
     <div className='w-full flex flex-col gap-4'>
       
     <div className='flex flex-row justify-between'>
-      <h1 className='text-2xl font-bold'>Rental Requests</h1>
+      <h1 className='text-2xl font-bold'>Rentals</h1>
     </div>
        <div className="flex w-full flex-col items-center justify-center align-middle">
       <Tabs

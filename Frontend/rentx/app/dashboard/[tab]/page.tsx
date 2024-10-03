@@ -17,10 +17,6 @@ function Dashboard({ params }: { params: { tab: string } }) {
   const { tab } = useParams();
   console.log(tab);
   
-  const router = useRouter();
-  const user = useSelector((state: RootState) => state.auth.user);
-  const sideBarTab = useSelector((state: RootState) => state.sidebar.activeSideBarTab);
-  
   const [isNewListingActive,setIsNewListingActive] = useState(false)
   const [isEditistingActive,setIsEditListingActive] = useState(false)
 
@@ -31,14 +27,7 @@ function Dashboard({ params }: { params: { tab: string } }) {
     setIsEditListingActive(!isEditistingActive)
   }
 
- useEffect(()=>{
-  if(user && user.userRoles.includes('Renter')){
-    router.push(`/dashboard/${tab}`)    
-  }else{
-    router.push('/auth/sign-in')
-  }
- },[user])
- 
+
   return (
     <div className='w-full'>
       {

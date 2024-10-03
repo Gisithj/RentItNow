@@ -1,4 +1,5 @@
 import api from "@/utils/api";
+import { CreateUser, Renter } from "@/utils/interfaces";
 import axios from "axios";
 
 interface Login{
@@ -52,7 +53,7 @@ export const LOGOUT = async ()=> {
     }
   };
 
-  export const REGISTER_CUSTOMER = async (customer:Customer)=> {
+  export const REGISTER_CUSTOMER = async (customer:CreateUser)=> {
     try {
         console.log("in herer");
         
@@ -76,25 +77,48 @@ export const LOGOUT = async ()=> {
     //   res.status(500).json({ error: 'Error creating user' });
     }
   };
+  export const REGISTER_RENTER = async (renter:CreateUser)=> {
+    try {
+        console.log("in herer");
+        
+      const newRenter ={
+        "renterName": renter.name,
+        "renterAddress":  renter.address,
+        "ContactNo":  renter.contactNo,
+        "Email": renter.email,
+        "UserName":  renter.userName,
+        "Password":  renter.password
+      }
+      console.log(newRenter);
+      
+      const response = await api.post('/Auth/register-renter', newRenter); // Your API endpoint
+      return response;
+      
+    //   res.status(200).json(response.data);
+    } catch (error) {
+        console.log(error);
+        
+    //   res.status(500).json({ error: 'Error creating user' });
+    }
+  };
   export const CHECK_AUTH = async ()=> {
     try {
-      const token = localStorage.getItem('token'); // Retrieve token from local storage
-      if(!token) return null;
-      console.log(token);
-      
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`, // Include token in Authorization header
-        },
-      };      
-      const response = await api.get('/Auth/auth-check',config); // Your API endpoint
-      if(response.status === 200 || response.status === 201){
+      const response = await api.get('/Auth/auth-check'); // Your API endpoint
+      if(response.status === 200 || response.status === 201 || response.status === 401){
         return response;
       }else{
         return null;
       }
     } catch (error) {
-        console.log(error);
+      if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
+        // Handle 401 Unauthorized without logging it as an error
+        console.log('Unauthorized access - 401');
+        return null;
+      } else {
+        // Log other errors
+        console.error('An error occurred:', error);
+        throw error;
+      }
     }
   };
 
@@ -102,6 +126,16 @@ export const LOGOUT = async ()=> {
     try {   
       const response = await api.get('/Auth/getUser');
         return response;
+      //return response;
+    } catch (error) {
+        console.log(error);
+    }
+  }
+
+  export const GOOGLE_LOGIN = async (usertype:string)=>{
+    try {   
+      const response = await api.get(`/Auth/signin-google/${usertype}`);
+      return response;
       //return response;
     } catch (error) {
         console.log(error);

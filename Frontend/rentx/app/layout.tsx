@@ -19,15 +19,13 @@ export default function RootLayout({
   }: Readonly<{
     children: React.ReactNode;
   }>
-)
-
-{
+){
  
 const pathname = usePathname() 
 const showNavBar = !['/auth/sign-in', '/auth/sign-up'].includes(pathname);
 
   return (
-    <html lang="en" className='light'>
+    <html lang="en"  className='dark' style={{ colorScheme: 'dark' }}>
       <body className={inter.className}>
       <Providers>
       {showNavBar &&<NavBar/> }
