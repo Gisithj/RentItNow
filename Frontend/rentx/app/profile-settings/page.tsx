@@ -4,43 +4,24 @@ import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from 
 import { Button } from '@nextui-org/button'
 import React, { useEffect, useState } from 'react'
 import { BsCircle } from 'react-icons/bs'
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from '@nextui-org/react'
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure, useSelect } from '@nextui-org/react'
 import Chat from '../chat/chat'
 import { connection } from '@/utils/signalrService'
 import { HubConnectionBuilder } from '@microsoft/signalr/dist/esm/HubConnectionBuilder'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/lib/store'
 
 function ProfileSettings() {
     const [activeTab,setActiveTab] = useState("prof-settings")
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    // const [messages, setMessages] = useState<string[]>([]);
+
     const handleProfileClick = () =>{
         setActiveTab("prof-settings")
     }
     const handleAccountSettingsClick = () =>{
         setActiveTab("acc-settings")
     }
-    // let connection = new HubConnectionBuilder()
-    // .withUrl("https://localhost:44375/chat", { withCredentials: true })
-    // .build();
-    // console.log(connection);
-    //   connection.start()
-    //     .then(function () {
-    //       console.log("connected");
-    //     })
-    //     .catch(function (err) {
-    //       return console.error(err.toString());
-    //     });
-        
-    // useEffect(() => {
-    //   if (connection) {
-  
-    //         connection.on('NewMessage', (message) => {
-    //           console.log("message from a customer",message);
-    //           setMessages((prevMessages) => [...prevMessages, message.cotent]);
-    //           // setMessages((prevMessages) => [...prevMessages, message]);
-    //         });
-    //   }
-    // }, [connection]);
+
   return (
     <div className='px-4 md:px-44 py-4 md:py-20 flex flex-row gap-10'>
         <div className="w-full max-w-[260px] border-small px-1 py-2 rounded-small border-default-200 dark:border-default-100">
@@ -83,34 +64,7 @@ function ProfileSettings() {
             <div className='flex flex-col gap-10'>
                 <div className='text-2xl font-bold'>{activeTab==="prof-settings"?"Gisith Jayawardena":activeTab==="acc-settings"?'Settings':''}</div>
               {activeTab==="prof-settings"?
-                <div>
-                  <Chat renterUserId=''/>
-                    {/* <Table hideHeader aria-label="Example static collection table" className='w-full'>
-                        <TableHeader>
-                            <TableColumn>NAME</TableColumn>
-                            <TableColumn>ROLE</TableColumn>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow key="1" className='border-b-slate-800'>
-                                <TableCell>Name</TableCell>
-                                <TableCell className='text-end'>Gisith Jayawardena</TableCell>
-                            </TableRow>
-                            <TableRow key="2">
-                                <TableCell>Email</TableCell>
-                                <TableCell className='text-end'>gisithj@gmail.com</TableCell>
-                            </TableRow>
-                            <TableRow key="3">
-                                <TableCell>Mobile No</TableCell>
-                                <TableCell className='text-end'>+94 76 34 64 139</TableCell>
-                            </TableRow>
-                            <TableRow key="4">
-                                <TableCell>Email</TableCell>
-                                <TableCell className='text-end'>gisithj@gmail.com</TableCell>
-                            </TableRow>
-                           
-                        </TableBody>
-                    </Table> */}
-                </div>
+              <></>
                 :activeTab==="acc-settings"?
                 <>
                   <Table hideHeader aria-label="Example static collection table" className='w-full'>

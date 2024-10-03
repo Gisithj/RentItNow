@@ -12,11 +12,11 @@ namespace RentItNow.Repositories
 
         }
 
-        public async Task<IEnumerable<Messages>> GetAllChatMessagesByIds(string senderId, string receiverId)
+        public async Task<IEnumerable<Messages>> GetAllChatMessagesByChatId(Guid chatId)
         {
             try
             {
-               var messages = await dbSet.Where((s=>s.SenderId == senderId && s.ReceiverId == receiverId || s.SenderId == receiverId && s.ReceiverId == senderId))
+               var messages = await dbSet.Where((s=>s.ChatId == chatId))
                     .OrderBy(s=>s.Timestamp)
                     .ToListAsync();
                

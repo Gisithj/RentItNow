@@ -48,13 +48,15 @@ import {navbarSlice} from "./features/navbarSlice";
 import {sidebarSlice} from "./features/sidebarSlice";
 import {updateTriggerSlice} from "./features/updateTriggerSlice";
 import {filterSlice} from "./features/filterSlice";
+import { chatSlice } from "./features/chatSlice";
 
 const rootReducer = combineSlices(
     authSlice,
     navbarSlice,
     sidebarSlice,
     updateTriggerSlice,
-    filterSlice
+    filterSlice,
+    chatSlice
 );
 export type RootState = ReturnType<typeof rootReducer>;
 

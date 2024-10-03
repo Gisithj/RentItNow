@@ -1,6 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { createAppSlice } from '../createAppSlice';
 import { GET_USER } from '@/api/auth';
+import { startConnection } from '@/utils/signalrService';
+import { User } from '@/utils/interfaces';
 
 // interface User{
 //   id: string
@@ -10,13 +12,7 @@ import { GET_USER } from '@/api/auth';
 // }
 interface AuthState {
   isLoggedIn: boolean;
-  user?: {
-    id:string,
-    userName:string,
-    email:string,
-    roleId:string,
-    userRoles:string[]
-  } | null;
+  user:User | null;
   status:String
 }
 
@@ -33,7 +29,8 @@ export const authSlice = createAppSlice({
     login: create.asyncThunk(
       async (_: void) => {
         const response = await GET_USER();
-          return response?.data
+        await startConnection();
+        return response?.data
       },
       {
         pending: (state) => {
@@ -62,7 +59,7 @@ export const authSlice = createAppSlice({
     logout:  create.reducer((state) => {
       console.log("called logout");
       state.isLoggedIn = false;
-      // localStorage.removeItem('token');
+      localStorage.removeItem('token');
     }),
     checkAuth:  create.reducer((state) => {
       if (typeof window !== 'undefined') { // Check for window before access

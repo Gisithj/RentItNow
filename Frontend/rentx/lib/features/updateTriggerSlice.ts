@@ -7,8 +7,12 @@ import axios from 'axios';
 export const fetchRentedItemsByRoleId = createAsyncThunk(
     'updateTrigger/fetchRentedItemsByRoleId',
     async (roleId:string) => {
-      const response = await GET_RENTED_ITEMS_BY_RENTER_WITH_INCLUDE(roleId);
-      return response;
+      try {        
+        const response = await GET_RENTED_ITEMS_BY_RENTER_WITH_INCLUDE(roleId);
+        return response;
+      } catch (error) {
+        throw error        
+      }
     }
   );
 export const fetchItemsByRoleId = createAsyncThunk(

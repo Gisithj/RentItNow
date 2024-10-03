@@ -1,3 +1,12 @@
+export interface User {
+  id:string,
+  userName:string,
+  email:string,
+  roleId:string,
+  userRoles:string[]
+  pictureUrl:string
+    
+}
 interface RentalOption {
     id?: string;
     rentalOptionName: string;
@@ -113,11 +122,21 @@ export interface UpdateItem{
 }
 
 export interface Renter{
-    userId?:string
+    userId:string
     renterId: string
     renterName: string
     renterAddress: string
     contactNo: string
+}
+export interface CreateUser{
+  name?: string;
+    renterName?: string
+    email: string;
+    renterAddress?: string
+    address?: string;
+    contactNo: string
+    userName: string
+    password: string
 }
 export interface Customer {
     
@@ -140,6 +159,20 @@ export interface Customer {
     senderId :string
     receiverId :string
     status:MessageStatus
+    chatId:string
+  }
+  export interface CreateChat {
+    senderId :string
+    receiverId :string
+  }
+  export interface Chat {
+    id:string
+    timestamp :string
+    senderId :string
+    receiverId :string
+    sender:User
+    receiver:User
+    unreadCount:number
   }
 
   export interface Notification {

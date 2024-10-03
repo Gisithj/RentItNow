@@ -38,6 +38,8 @@ import { useAppDispatch } from "@/lib/hooks";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import { set } from "date-fns";
 import SignIn from "@/app/components/signIn";
+import { setActiveChat } from "@/lib/features/chatSlice";
+import { CREATE_CHAT } from "@/api/messages";
 
 const ProductPage = ({ params }: { params: { slug: string[]} }) => {
   const productId = params.slug[0];
@@ -315,6 +317,21 @@ const ProductPage = ({ params }: { params: { slug: string[]} }) => {
   const handleRenterProfileClick = (renterId: string) => {
     router.push(`/profile?renter=${renterId}`);
   };
+  const handleRenterChatClick = async () => {
+    console.log("in the chat click");
+    
+    try {
+      if(!user || !renterDetails) return;
+      console.log("user",user);
+      console.log("renter",renterDetails);
+      
+      const chat = await CREATE_CHAT({senderId:user.id,receiverId:renterDetails.userId});
+      dispatch(setActiveChat(chat));
+    } catch (error) {
+      console.log("error creating chat",error);      
+    }
+    router.push('/chat');
+  };
 
   useEffect(() => {
     //get the renter details
@@ -452,7 +469,7 @@ const ProductPage = ({ params }: { params: { slug: string[]} }) => {
                   name={renterDetails?.renterName}
                   className="cursor-pointer"
                   description={
-                    <Link size="sm" onClick={()=>{router.push('/chat')}} >
+                    <Link size="sm" onPress={handleRenterChatClick} >
                       @{renterDetails && renterDetails?.renterName}
                     </Link>
                   }

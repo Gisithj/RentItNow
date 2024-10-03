@@ -7,13 +7,9 @@ import {
   NavbarItem,
   NavbarMenuToggle,
   NavbarMenu,
-  NavbarMenuItem,
   Link,
   Button,
   Avatar,
-  PopoverTrigger,
-  Popover,
-  PopoverContent,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
@@ -45,12 +41,17 @@ import {
   GET_NOTIFICATIONS,
   MARK_ALL_NOTIFICATIONS_AS_READ,
 } from "@/api/messages";
-import { Notification } from "@/utils/interfaces";
+import { Message, Notification } from "@/utils/interfaces";
+import { showToast } from "@/utils/showToastHelper";
+import { useTheme } from "next-themes";
+import { getDate, getTime } from "@/utils/formatDate";
+import { setUnreadCount } from "@/lib/features/chatSlice";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
+  const theme = useTheme();
   const menuItems = [
     { label: "Home", link: "/" },
     { label: "Rent tools", link: "/rent-tools" },
@@ -58,9 +59,9 @@ export default function NavBar() {
   ];
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const activeNavBar = useSelector(
-    (state: RootState) => state.navbar.activeNavBar
-  );
+  const activeNavBar = useSelector((state: RootState) => state.navbar.activeNavBar);
+  const {unreadCount} = useSelector((state: RootState) => state.chat);
+  const [isUnreadChat,setIsUnreadChat] = useState(false);
   const dispatch = useAppDispatch();
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
 
@@ -99,7 +100,9 @@ export default function NavBar() {
   };
   const fetchNotification = async () => {
     try {
-      const notificatins = await GET_NOTIFICATIONS(currentUser!.id).then(
+      console.log("notifications");
+      
+      const notificatins = currentUser && await GET_NOTIFICATIONS(currentUser.id).then(
         (response) => {
           setNotifications(response);
           console.log("notifications", response);
@@ -109,36 +112,74 @@ export default function NavBar() {
       console.error("Error checking authentication status:", error);
     }
   };
-  connection.on("NotificationUpdate", () => {
+useEffect(()=>{
+  const handleNotificationUpdate = () => {
     console.log("notification updated called from signalR");
-    
     fetchNotification();
-  });
+  };
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const responseData = await CHECK_AUTH().then((response) => {
-          if (response?.data.isAuthenticated == true) {
-            if (!isLoggedIn) {
-              dispatch(login());
-            }
-            // dispatch(login())
-          } else {
-            dispatch(logout());
-          }
-        });
-      } catch (error) {
-        console.error("Error checking authentication status:", error);
+  const handleRentalStatusNotification = (message: string) => {
+    console.log("rental status notification", message);
+    showToast("warning", <p>{message}</p>, { autoClose: 5000, theme: theme.theme });
+  };
+
+  const handleNewMessage = (message: Message) => {
+    console.log(message);
+    dispatch(setUnreadCount({chatId: message.chatId, count:1}))
+  }
+  connection.on("NotificationUpdate", handleNotificationUpdate);
+  connection.on("RentalStatusNotification", handleRentalStatusNotification);
+  connection.on('NewMessage', handleNewMessage);
+
+
+  return () => {
+    connection.off("NotificationUpdate", handleNotificationUpdate);
+    connection.off("RentalStatusNotification", handleRentalStatusNotification);
+    connection.off('NewMessage', handleNewMessage);
+
+  };
+},[])
+const checkAuth = async () => {
+  try {
+    const responseData = await CHECK_AUTH().then((response) => {
+      if (response?.data.isAuthenticated == true) {
+        if (!isLoggedIn) {
+          dispatch(login());
+        }
+      } else {
+        dispatch(logout());
       }
-    };
+    });
+  } catch (error) {
+    dispatch(logout());
+    console.error("Error checking authentication status:", error);
+    return showToast("error" , <p>User not logged in</p>,{autoClose: 5000,theme:theme.theme});
+    
+  }
+};
 
+  useEffect(() => {  
     checkAuth();
     fetchNotification();
+    const interval = setInterval(() => {
+      checkAuth();
+    }, 15 * 60 * 1000); 
+
+    return () => clearInterval(interval);
   }, [isLoggedIn, currentUser]);
+
+
   useEffect(() => {
-    console.log("notifications", notifications);
-  }, [notifications]);
+    for (const key in unreadCount) {
+      if (unreadCount[key] > 0) {
+        setIsUnreadChat(true);
+        return;
+      }else{
+        setIsUnreadChat(false);
+      }
+    }
+  }, [unreadCount,isUnreadChat]);
+
   return (
     <Navbar
       onMenuOpenChange={setIsMenuOpen}
@@ -153,7 +194,7 @@ export default function NavBar() {
         <NavbarBrand>
           {/* <AcmeLogo /> */}
           <Link color="foreground" href="/">
-            <p className="font-bold text-inherit">ACME</p>
+            <p className="font-bold text-inherit">RENTX</p>
           </Link>
         </NavbarBrand>
       </NavbarContent>
@@ -218,10 +259,14 @@ export default function NavBar() {
         <NavbarItem>
           <ThemeSwitcher />
         </NavbarItem>
-        {isLoggedIn ? (
+        {isLoggedIn && currentUser ? (
           <div className="flex flex-row gap-4 items-center">
             <NavbarItem onClick={handleChatOpen} className="cursor-pointer">
-              <IoChatboxEllipsesOutline size={30} />
+              {isUnreadChat?
+                <Badge content="" color="danger" shape="circle" placement="top-right" className="border-none"><IoChatboxEllipsesOutline size={30} /></Badge>
+                :
+                <IoChatboxEllipsesOutline size={30} />
+              }
             </NavbarItem>
             <NavbarItem>
             {
@@ -246,34 +291,42 @@ export default function NavBar() {
                         <DropdownMenu
                           aria-label="notification Actions"
                           variant="flat"
+                          className="pt-4 px-4"
                         >
-                          <DropdownSection title="Actions">
+                          <DropdownSection className="max-h-[300px] w-[300px] overflow-y-auto">
                             {notifications.map((notification) => (
                               <DropdownItem key={notification.id}>
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-2 p-2">
                                   <div>{notification.message}</div>
-                                  <div>{notification.createdAt.toString()}</div>
+                                  <div className="flex flex-row justify-between">
+                                    <div className="text-xs text-default-400">
+                                      {getDate(notification.createdAt)}
+                                    </div>
+                                    <div className="text-xs text-default-400">
+                                      {getTime(notification.createdAt)}
+                                    </div>
+                                  </div>
                                 </div>
                               </DropdownItem>
                             ))}
                           </DropdownSection>
-                          <DropdownSection>
+                          <DropdownSection className="flex flex-row justify-end">
                             <DropdownItem
                               key="mark-all-read"
                               onClick={markAllNotificationsAsRead}
+                              className="w-fit text-right text-primary"
                             >
                               Mark all as read
                             </DropdownItem>
                           </DropdownSection>
                         </DropdownMenu>
                       ) : (
-                        <DropdownMenu aria-label="Profile Actions" variant="flat">
-                          <DropdownItem
-                            key="logout"
-                            color="danger"
-                            onPress={handleLogout}
+                        <DropdownMenu emptyContent={"You are all caught up"} aria-label="Notification Actions" className="max-h-[200px] overflow-y-auto content-center">
+                           <DropdownItem key={"edit"} className="flex flex-row justify-center items-center"
                           >
-                            You are all caught up
+                            <div className="flex flex-row justify-center items-center w-full">
+                              You are all caught up
+                            </div>
                           </DropdownItem>
                         </DropdownMenu>
                       )}
@@ -287,15 +340,20 @@ export default function NavBar() {
                         </Button>
                       </DropdownTrigger>  
                   
-                        <DropdownMenu aria-label="Profile Actions" variant="flat">
-                          <DropdownItem
-                            key="logout"
-                            color="danger"
-                            onPress={handleLogout}
+                      <DropdownMenu 
+                          hideEmptyContent 
+                          emptyContent={"You are all caught up"} 
+                          aria-label="Notification Actions" 
+                          variant="flat" 
+                          disabledKeys={["edit", "delete"]}
+                          className="h-[200px] overflow-y-auto place-content-center">
+                          <DropdownItem key={"edit"} className="flex flex-row justify-center items-center"
                           >
-                            You are all caught up
+                            <div className="flex flex-row justify-center items-center w-full">
+                              You are all caught up
+                            </div>
                           </DropdownItem>
-                        </DropdownMenu>
+                      </DropdownMenu>
                     </Dropdown>
                 }
              
@@ -310,7 +368,8 @@ export default function NavBar() {
                     color="secondary"
                     name="Jason Hughes"
                     size="sm"
-                    src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
+                    src={currentUser.pictureUrl?currentUser.pictureUrl:"https://i.pravatar.cc/150?u=a042581f4e29026704d"}
+                    
                   />
                 </DropdownTrigger>
                 {currentUser && currentUser.userRoles.includes("Customer") ? (

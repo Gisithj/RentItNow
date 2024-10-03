@@ -13,6 +13,7 @@ namespace RentItNow.configurations
         IMessageRepository Messages { get; set; }
         INotificationRepository Notification { get; set; }
         IChatRepository Chat { get; set; }
+        IRenterConfigRepository RenterConfig { get; set; }
         Task CompleteAsync();
         void Dispose();
     }

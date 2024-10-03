@@ -102,7 +102,7 @@ html.light ::-webkit-scrollbar-track {
 }
 
 html.light ::-webkit-scrollbar-thumb {
-  background-color: #555; /* Darker thumb color for better contrast in light theme */
+  background-color: #969696; /* Darker thumb color for better contrast in light theme */
   border: 3px solid #ffffff00;
 }
 html{

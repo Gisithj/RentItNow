@@ -226,6 +226,7 @@ namespace RentItNow.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("CustomerId");
@@ -371,8 +372,10 @@ namespace RentItNow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("NotificationType")
+                        .HasColumnType("int");
+
                     b.Property<string>("SenderId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -483,6 +486,7 @@ namespace RentItNow.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("RenterId");
@@ -490,6 +494,29 @@ namespace RentItNow.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Renters");
+                });
+
+            modelBuilder.Entity("RentItNow.Models.RenterConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RenterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("overdueChargePerDay")
+                        .HasColumnType("int");
+
+                    b.Property<int>("overdueNotificationIntervalInHours")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RenterId")
+                        .IsUnique();
+
+                    b.ToTable("RenterConfigs");
                 });
 
             modelBuilder.Entity("RentItNow.Models.User", b =>
@@ -533,6 +560,10 @@ namespace RentItNow.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("PictureUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -631,7 +662,9 @@ namespace RentItNow.Migrations
                 {
                     b.HasOne("RentItNow.Models.User", "User")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -738,9 +771,22 @@ namespace RentItNow.Migrations
                 {
                     b.HasOne("RentItNow.Models.User", "User")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RentItNow.Models.RenterConfig", b =>
+                {
+                    b.HasOne("RentItNow.Models.Renter", "Renter")
+                        .WithOne()
+                        .HasForeignKey("RentItNow.Models.RenterConfig", "RenterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Renter");
                 });
 
             modelBuilder.Entity("RentItNow.Models.Chat", b =>

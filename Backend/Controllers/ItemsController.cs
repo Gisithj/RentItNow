@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +12,14 @@ using RentItNow.Data;
 using RentItNow.DTOs;
 using RentItNow.DTOs.Customer;
 using RentItNow.DTOs.Item;
+using RentItNow.Helpers;
 using RentItNow.Models;
 using RentItNow.Services;
 
 namespace RentItNow.Controllers
 {
     [Route("api/[controller]")]
+    
     [ApiController]
     public class ItemsController : ControllerBase
     {
@@ -185,6 +188,7 @@ namespace RentItNow.Controllers
         // PUT: api/Items/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut]
+        [Authorize(Roles = UserRoles.Renter)]
         public async Task<IActionResult> PutItem(UpdateItemDto updateItemDto)
         {
             try
@@ -206,6 +210,7 @@ namespace RentItNow.Controllers
         // POST: api/Items
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult<CreateItemDto>> PostItem(CreateItemDto createItemDto)
         {
      
@@ -225,6 +230,7 @@ namespace RentItNow.Controllers
 
         // DELETE: api/Items/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = UserRoles.Renter)]
         public async Task<IActionResult> DeleteItem(Guid id)
         {    
             try
@@ -240,7 +246,9 @@ namespace RentItNow.Controllers
             }
         }
 
+        
         [HttpPost("RentItem")]
+        [Authorize(Roles = UserRoles.Customer)]
         public async Task<ActionResult> RentItem(RentalRequestDto rentItemDto)
         {
             try
@@ -276,6 +284,7 @@ namespace RentItNow.Controllers
         }
 
         [HttpPost("EndRentItem")]
+        [Authorize(Roles = UserRoles.Renter)]
         public async Task<ActionResult<EndRentDto>> EndRent(EndRentDto endRentDto)
         {
             try

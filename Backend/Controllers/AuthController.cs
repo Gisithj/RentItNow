@@ -20,6 +20,14 @@ using RentItNow.DTOs.Renter;
 using RentItNow.DTOs.Rent;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 using RentItNow.DTOs.User;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNet.SignalR;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using NuGet.Configuration;
+using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
+using Newtonsoft.Json.Linq;
 
 namespace RentItNow.Controllers
 {
@@ -32,15 +40,20 @@ namespace RentItNow.Controllers
        // private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
         private readonly JwtTokenHelper _jwtHelper;
+        private readonly RolesHelper _rolesHelpers;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly SignInManager<User> _signInManager;
+
         public AuthController(
             IUnitOfWork unitOfWork, 
             IMapper mapper, 
             JwtTokenHelper jwtHelper,
+            RolesHelper rolesHelpers,
             UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
-            IConfiguration configuration
+            IConfiguration configuration,
+            SignInManager<User> signInManager
             )
         {
             _unitOfWork = unitOfWork;
@@ -49,6 +62,8 @@ namespace RentItNow.Controllers
             _configuration = configuration;
             _userManager = userManager;
             _roleManager = roleManager;
+            _signInManager = signInManager;
+            _rolesHelpers = rolesHelpers;
         }
 
         [HttpPost]
@@ -56,7 +71,9 @@ namespace RentItNow.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             var user = await _userManager.FindByNameAsync(loginDto.Username);
-            if (user != null && await _userManager.CheckPasswordAsync(user, loginDto.Password))
+            var result = await _signInManager.PasswordSignInAsync(loginDto.Username, loginDto.Password, isPersistent: false, lockoutOnFailure: false);
+
+            if (result.Succeeded)
             {
                 var userRoles = await _userManager.GetRolesAsync(user);
                 var authClaims = new List<Claim>
@@ -78,7 +95,7 @@ namespace RentItNow.Controllers
                 {
                     authClaims.Add(new Claim(ClaimTypes.Role, userRole));
                 }
-                var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
+                var tokenHandler = await _jwtHelper.GenerateJwtToken(authClaims, 30);
                 Response.Cookies.Append("token", tokenHandler, new CookieOptions
                 {
                     HttpOnly = true,
@@ -92,18 +109,6 @@ namespace RentItNow.Controllers
                     token = tokenHandler,
                     expiration = 30
                 });
-                /*foreach (var userRole in userRoles)
-                {
-                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-                }
-
-                var token = _jwtHelper.GenerateJwtToken(user.Id,);
-
-                return Ok(new
-                {
-                    token = new JwtSecurityTokenHandler().WriteToken(token),
-                    expiration = token.ValidTo
-                });*/
             }
             else
             {
@@ -112,11 +117,16 @@ namespace RentItNow.Controllers
         }
 
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             // Remove the authentication cookie
             if (Request.Cookies.ContainsKey("token"))
             {
+
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
                 Response.Cookies.Delete("token");
             }
             else
@@ -126,22 +136,13 @@ namespace RentItNow.Controllers
 
 
             // Return a response indicating successful logout
-            return Ok(new { message = "Logout successful" });
+            return Ok(new { message = "User logged out successfully" });
         }
         [HttpGet("auth-check")]
         public IActionResult CheckAuthentication()
         {
-            string authorizationHeader = Request.Headers["Authorization"].ToString();
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-            {
-                return Unauthorized();
-            }
-
-            string token = authorizationHeader.Substring("Bearer ".Length);
-
-            bool isAuthenticated = _jwtHelper.ValidateJwtToken(token).isAuthenticated;
-
-            if (isAuthenticated)
+            
+            if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 return Ok(new { isAuthenticated = true });
             }
@@ -201,73 +202,66 @@ namespace RentItNow.Controllers
         {
             if (_unitOfWork.Customer == null)
             {
-                return Problem("Entity set 'RentItNowDbContext.Customers'  is null.");
+                return Problem("Entity set 'RentItNowDbContext.Customers' is null.");
             }
+
             try
             {
-                var user = _mapper.Map<User>(customerDto);
+                var user = new User
+                {
+                    UserName = customerDto.UserName,
+                    Email = customerDto.Email,
+                    PictureUrl = customerDto.PictureUrl
+                };
 
                 var userExists = await _userManager.FindByNameAsync(customerDto.UserName);
                 if (userExists != null)
                     return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User already exists!" });
 
-                var userCreated = await _unitOfWork.User.CreateUserAsync(user, customerDto.Password);
+                var userCreated = await _userManager.CreateAsync(user, customerDto.Password);
 
                 if (userCreated.Succeeded)
                 {
-                    if (!await _roleManager.RoleExistsAsync(UserRoles.Customer))
-                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.Customer));
-                    if (!await _roleManager.RoleExistsAsync(UserRoles.User))
-                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
+                    await _rolesHelpers.EnsureRolesExist(UserRoles.Customer, UserRoles.User);
 
-                    if (await _roleManager.RoleExistsAsync(UserRoles.Customer))
-                    {
-                        await _userManager.AddToRoleAsync(user, UserRoles.Customer);
-                    }
-                    if (await _roleManager.RoleExistsAsync(UserRoles.User))
-                    {
-                        await _userManager.AddToRoleAsync(user, UserRoles.User);
-                    }
-                                       
+                    await _userManager.AddToRolesAsync(user, new[] { UserRoles.Customer, UserRoles.User });
+
                     var customer = _mapper.Map<Customer>(customerDto);
                     customer.User = user;
                     var customerCreated = await _unitOfWork.Customer.AddAsync(customer);
                     await _unitOfWork.CompleteAsync();
+
+                    var userRoles = await _userManager.GetRolesAsync(user);
 
                     var authClaims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.UserName),
                         new Claim(ClaimTypes.NameIdentifier, user.Id),
                         new Claim("customerId",customerCreated.CustomerId.ToString()),
-                        new Claim(ClaimTypes.Role,UserRoles.Customer),
-                        new Claim(ClaimTypes.Role,UserRoles.User),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                     };
-                    var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
-                    Response.Cookies.Append("token", tokenHandler, new CookieOptions
+
+                    authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+                    var token = await _jwtHelper.GenerateJwtToken(authClaims, 30);
+
+                    Response.Cookies.Append("token", token, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
-                        SameSite=SameSiteMode.None,
-                        //SameSite = SameSiteMode.Strict,
-                        Expires = DateTime.UtcNow.AddHours(1), 
+                        SameSite = SameSiteMode.None,
+                        Expires = DateTime.UtcNow.AddHours(1)
                     });
 
-                    return Ok(tokenHandler);
-                    //  return CreatedAtAction("GetCustomerById", new { customer.CustomerId }, customer);
+                    return Ok(token);
                 }
                 else
                 {
-                   return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+                    return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
                 }
-
-
-
-
             }
             catch (Exception ex)
             {
-
                 return NotFound(ex.Message);
             }
         }
@@ -283,51 +277,115 @@ namespace RentItNow.Controllers
             }
             try
             {
-                if (renterDto == null)
+                var user = new User
                 {
-                    return BadRequest();
-                }
-                var user = _mapper.Map<User>(renterDto);
+                    UserName = renterDto.UserName,
+                    Email = renterDto.Email,
+                    PictureUrl = renterDto.PictureUrl
+                };
 
                 var userExists = await _userManager.FindByNameAsync(renterDto.UserName);
                 if (userExists != null)
                     return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User already exists!" });
 
-                var userCreated = await _unitOfWork.User.CreateUserAsync(user, renterDto.Password);
+                var userCreated = await _userManager.CreateAsync(user, renterDto.Password);
 
                 if (userCreated.Succeeded)
                 {
-                    if (!await _roleManager.RoleExistsAsync(UserRoles.Renter))
-                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.Renter));
-                    if (!await _roleManager.RoleExistsAsync(UserRoles.User))
-                        await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
+                    await _rolesHelpers.EnsureRolesExist(UserRoles.Customer, UserRoles.User);
 
-                    if (await _roleManager.RoleExistsAsync(UserRoles.Renter))
-                    {
-                        await _userManager.AddToRoleAsync(user, UserRoles.Renter);
-                    }
-                    if (await _roleManager.RoleExistsAsync(UserRoles.User))
-                    {
-                        await _userManager.AddToRoleAsync(user, UserRoles.User);
-                    }
-                   
+                    await _userManager.AddToRolesAsync(user, new[] { UserRoles.Renter, UserRoles.User });
 
                     var renter = _mapper.Map<Renter>(renterDto);
                     renter.User = user;
                     var renterCreated = await _unitOfWork.Renter.AddAsync(renter);
                     await _unitOfWork.CompleteAsync();
 
+                    var userRoles = await _userManager.GetRolesAsync(user);
+
                     var authClaims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.UserName),
                         new Claim(ClaimTypes.NameIdentifier, user.Id),
                         new Claim("renterId",renterCreated.RenterId.ToString()),
-                        new Claim(ClaimTypes.Role,UserRoles.Renter),
-                        new Claim(ClaimTypes.Role,UserRoles.User),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                     };
-                    var tokenHandler = _jwtHelper.GenerateJwtToken(authClaims, 30);
-                    Response.Cookies.Append("token", tokenHandler, new CookieOptions
+
+                    authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+                    var token = await _jwtHelper.GenerateJwtToken(authClaims, 30);
+
+                    Response.Cookies.Append("token", token, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.None,
+                        Expires = DateTime.UtcNow.AddHours(1)
+                    });
+
+                    return Ok(token);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+
+
+        [EnableCors("AllowAnyOrigin")]
+        [HttpGet("signin-google")]
+        public IActionResult GoogleLogin(string usertype)
+        {
+            var state = Guid.NewGuid().ToString();
+            var callbackUrl = Url.Action("GoogleCallback", new { usertype });
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", callbackUrl);
+            properties.AllowRefresh = true;
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+
+        }
+
+        [EnableCors("AllowAnyOrigin")]
+        [HttpGet("google-callback")]
+        public async Task<IActionResult> GoogleCallback(string usertype)
+        {
+            try
+            {
+                ExternalLoginInfo info = await _signInManager.GetExternalLoginInfoAsync();
+                var signinResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, false);
+                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+                var user = await _userManager.FindByEmailAsync(email);
+                var claims =  info.Principal.Claims.ToList();
+                if (signinResult.Succeeded)
+                {
+
+                    var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                    };
+
+                    var userRoles = await _userManager.GetRolesAsync(user);
+                    authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+                    var jwt = await _jwtHelper.GenerateJwtToken(authClaims, 30);
+                    //var jwt = await _jwtHelper.GenerateJwtToken(claims, 7);
+
+                    var refreshToken = Guid.NewGuid().ToString();
+
+                    await _userManager.SetAuthenticationTokenAsync(
+                        user,
+                        TokenOptions.DefaultProvider,
+                        "RefreshToken",
+                        refreshToken);
+
+                    Response.Cookies.Append("token", jwt, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
@@ -335,83 +393,85 @@ namespace RentItNow.Controllers
                         //SameSite = SameSiteMode.Strict,
                         Expires = DateTime.UtcNow.AddHours(1),
                     });
+                    //return Ok(jwt);
+                    return Redirect("https://localhost:3000/rent-tools");
 
-                    return Ok(tokenHandler);
-                    //  return CreatedAtAction("GetCustomerById", new { customer.CustomerId }, customer);
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "Renter creation failed! Please check user details and try again." });
+                    if (user == null)
+                    {
+
+                        var pictureUrl = info.Principal.FindFirstValue("picture");
+                        user = new User
+                        {
+                            UserName = info.Principal.FindFirstValue(ClaimTypes.GivenName),
+                            Email = email,
+                            EmailConfirmed = true,
+                            PictureUrl = pictureUrl
+                        };
+                        var userCreated = await _userManager.CreateAsync(user);
+                        if (userCreated.Succeeded)
+                        {
+                            if (usertype == "customer")
+                            {
+                                var customer = new Customer { UserId = user.Id, Email = email, Name = info.Principal.FindFirstValue(ClaimTypes.Name) };
+                                await _unitOfWork.Customer.AddAsync(customer);
+                                await _userManager.AddToRolesAsync(user, new[] { UserRoles.Customer, UserRoles.User });
+                            }
+                            else if (usertype == "renter")
+                            {
+                                var renter = new Renter { UserId = user.Id, RenterName = info.Principal.FindFirstValue(ClaimTypes.Name) };
+                                await _unitOfWork.Renter.AddAsync(renter);
+                                await _userManager.AddToRolesAsync(user, new[] { UserRoles.Renter, UserRoles.User });
+                            }
+                            await _rolesHelpers.EnsureRolesExist(UserRoles.Customer, UserRoles.User);                          
+                            await _unitOfWork.CompleteAsync();
+
+                        }
+                    }
+                    await _userManager.AddLoginAsync(user, info);
+                    await _signInManager.SignInAsync(user, false);
+
+                    var userRoles = await _userManager.GetRolesAsync(user);
+                    var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                    };
+                    
+                    authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+                    var jwt = await _jwtHelper.GenerateJwtToken(authClaims, 30);
+
+                    var refreshToken = Guid.NewGuid().ToString();
+
+                    await _userManager.SetAuthenticationTokenAsync(
+                        user,
+                        TokenOptions.DefaultProvider,
+                        "RefreshToken",
+                        refreshToken);
+
+                    Response.Cookies.Append("token", jwt, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.None,
+                        Expires = DateTime.UtcNow.AddHours(1),
+                    });
+                    //return Ok(jwt);
+
+                    return Redirect("https://localhost:3000/rent-tools");
                 }
 
-
-
-
+          
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-
-                return NotFound(ex.Message);
+                return BadRequest();
             }
         }
 
-
-
-        [HttpGet("signin-google")]
-        [EnableCors("AllowAnyOrigin")]
-        public IActionResult GoogleLogin()
-        {
-            var state = Guid.NewGuid().ToString();
-            //HttpContext.Session.SetString("GoogleCsrfToken", state);
-
-            var properties = new AuthenticationProperties
-            {
-                RedirectUri = Url.Action(nameof(GoogleCallback)),
-                Items =
-        {
-            { "state", state }
-        }
-            };
-
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-        }
-
-        [HttpGet("google-callback")]
-        [EnableCors("AllowAnyOrigin")]
-        public async Task<IActionResult> GoogleCallback()
-        {
-            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-            if (result?.Succeeded != true)
-            {
-                return BadRequest("Unable to authenticate with Google");
-            }
-
-            // Validate the state parameter
-            var state = result.Properties.Items["state"];
-            if (state != null && !state.Equals(result.Properties.Parameters["state"]))
-            {
-                return BadRequest("Invalid state parameter");
-            }
-
-            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-
-            // Check if user exists in your database
-            var user = await _unitOfWork.User.GetUserByEmailAsync(email);
-            if (user == null)
-            {
-                // Create new user account if not exists
-                user = _mapper.Map<User>(new IdentityUser { UserName = email, Email = email });
-                var createUserResult = await _unitOfWork.User.CreateUserAsync(user);
-                if (!createUserResult.Succeeded)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create user account");
-                }
-            }
-
-            // Generate JWT token
-            var tokenHandler = _jwtHelper.GenerateJwtToken(user.Id, user.Email, 30, "user");
-
-            return Ok(tokenHandler);
-        }
     }
 }

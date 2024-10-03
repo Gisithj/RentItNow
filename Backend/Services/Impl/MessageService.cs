@@ -19,11 +19,11 @@ namespace RentItNow.Services.Impl
             await _unitOfWork.CompleteAsync();
             return message;
         }
-        public async Task<IEnumerable<Messages>> GetAllChatMessagesBytIds(string senderId, string receiverId)
+        public async Task<IEnumerable<Messages>> GetAllChatMessagesByChatId(Guid chatId)
         {
             try
             {
-                var messages = await _unitOfWork.Messages.GetAllChatMessagesByIds(senderId, receiverId);
+                var messages = await _unitOfWork.Messages.GetAllChatMessagesByChatId(chatId);
                 return messages;
             }
             catch (Exception)

@@ -1,5 +1,5 @@
 'use client'
-import { LOGIN } from '@/api/auth';
+import { GOOGLE_LOGIN, LOGIN } from '@/api/auth';
 import { login } from '@/lib/features/authSlice';
 import { useAppDispatch } from '@/lib/hooks';
 import { RootState } from '@/lib/store';
@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react'
 import { VscEye, VscEyeClosed } from 'react-icons/vsc';
 import { useSelector } from 'react-redux';
+import { FcGoogle } from "react-icons/fc";
 
 function SignIn({onClose}:{onClose:()=>void}) {
 
@@ -63,7 +64,21 @@ function SignIn({onClose}:{onClose:()=>void}) {
         console.log(error);
       }
     }
-    
+    // const handleGoogleLogin = async () => {
+    //   try {
+    //     const response = await GOOGLE_LOGIN();
+    //     if(response?.status===200){ 
+    //       localStorage.setItem('token',response.data.token)
+    //       dispatch(login()).then(()=>{
+    //         onClose();
+    //       })
+    //     }else if(response?.status===401){
+    //       setIsCredentialsWrong(true)
+    //     } 
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // }
     // useEffect(()=>{
     //   if(isLoggedIn && user){
     //     if(user.userRoles.includes("Renter")){
@@ -83,7 +98,7 @@ function SignIn({onClose}:{onClose:()=>void}) {
     
   }
   return (
-      <div className='flex flex-col items-center gap-10 justify-center'>
+      <div className='flex bg-inherit flex-col items-center gap-10 justify-center'>
         <div className='flex flex-col items-center gap-10 w-fit px-4 py-10 rounded-2xl h-full'>
           <div>
             <h1 className='text-2xl font-bold'>Welcome Back</h1>
@@ -122,12 +137,21 @@ function SignIn({onClose}:{onClose:()=>void}) {
                     isCredentialsWrong && "Incorrect username or password"}
                     onValueChange={setValuePassword}
                     />
-                  <Button id="log_in" color='primary' onClick={handleSubmit}>Log in</Button>
-                  <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
-                        Sign Up
-                  </Button>
-                {/* </CardBody>
-              </Card>   */}
+                   <Button id="log_in" color='primary' onClick={handleSubmit} className='w-full'>Log in</Button>
+                  <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
+                    <span className="text-gray-500 text-sm px-2 bg-foreground-50">or Login with</span>
+                  </div>
+                  <Button 
+                      as={Link} 
+                      color="primary" 
+                      href="https://localhost:44375/api/Auth/signin-google?usertype=customer" 
+                      variant="bordered" 
+                      startContent={<FcGoogle size={20}/>}
+                      className='w-full'>
+                  Sign in with Google
+                </Button>
+                <p>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=customer">Sign up</Link></p>
+                 
             </Tab>
             <Tab key="renter" title="Renter" className='flex flex-col gap-4'>
               {/* <Card>
@@ -160,13 +184,23 @@ function SignIn({onClose}:{onClose:()=>void}) {
               onValueChange={setValuePassword}
               />
           
-            <Button color='primary' onClick={handleSubmit}>Log in</Button>
-            <Button as={Link} color="primary" href="/auth/sign-up" variant="flat">
-                  Sign Up
-            </Button>
-                {/* </CardBody>
-              </Card>   */}
-            </Tab>           
+        
+          <Button color='primary' onClick={handleSubmit} className='w-full'>Log in</Button>
+            <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
+                    <span className="text-gray-500 text-sm px-2 bg-black">or Login with</span>
+                  </div>
+            <Button 
+            as={Link} 
+            color="primary" 
+            href="https://localhost:44375/api/Auth/signin-google?usertype=renter" 
+            variant="bordered" 
+            startContent={<FcGoogle size={20}/>}            
+            className='w-full'  >
+                  Sign in with Google
+                </Button>
+            
+            <p>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=renter">Sign up</Link></p>
+            </Tab>          
           </Tabs>
            
           </form>

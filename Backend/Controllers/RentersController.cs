@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentItNow.configurations;
 using RentItNow.DTOs.Rent;
@@ -6,20 +7,24 @@ using RentItNow.DTOs.Renter;
 using RentItNow.DTOs.User;
 using RentItNow.Helpers;
 using RentItNow.Models;
+using RentItNow.Services;
 namespace RentItNow.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class RentersController : ControllerBase
     {
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly JwtTokenHelper _jwtHelper;
-        public RentersController(IMapper mapper, IUnitOfWork unitOfWork, JwtTokenHelper jwtHelper)
+        private readonly IRenterService _renterService;
+        public RentersController(IMapper mapper, IUnitOfWork unitOfWork, JwtTokenHelper jwtHelper,IRenterService renterService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _jwtHelper = jwtHelper;
+            _renterService = renterService;
         }
 
         [HttpGet("GetAllRenters")]
@@ -27,7 +32,7 @@ namespace RentItNow.Controllers
         {
             try
             {
-                var renters = await _unitOfWork.Renter.GetAllRentersWithUserAsync();
+                var renters = await _renterService.GetAllRentersAsync();
                 if (renters == null || renters.Count() == 0)
                 {
                     return NotFound("Renters not found");
@@ -139,6 +144,7 @@ namespace RentItNow.Controllers
         // POST: api/Renters
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [AllowAnonymous]
         public async Task<ActionResult<Renter>> PostRenter(CreateRenterDto renterDto)
         {
             if(renterDto == null)
@@ -149,25 +155,12 @@ namespace RentItNow.Controllers
             try
             {
                 var user = _mapper.Map<User>(renterDto);
-                var userCreated = await _unitOfWork.User.CreateUserAsync(user,renterDto.Password);
-                if(userCreated.Succeeded) {
-                    var renter = _mapper.Map<Renter>(renterDto);
-                    renter.User = user;
-                    var renterCreated = await _unitOfWork.Renter.AddAsync(renter);
-                    await _unitOfWork.CompleteAsync();
-                    var tokenHandler = _jwtHelper.GenerateJwtToken(renterCreated.RenterId.ToString(), user.Email, 30,"renter");
-
-                    return Ok(tokenHandler);
-                    //return CreatedAtAction("GetRenterById", new { renter.RenterId }, renter);
-                }
-                else
+                var renter = await _renterService.CreateRenterAsync(user, renterDto);
+                if(renter == null)
                 {
-                    return BadRequest("User not created");
+                    return BadRequest();
                 }
-
-               
-                
-                
+                return Ok(renter);       
             }
             catch (Exception ex)
             {

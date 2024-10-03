@@ -8,6 +8,9 @@ import { PagedItem } from '@/utils/interfaces'
 import { RootState } from '@/lib/store'
 import { useSelector } from 'react-redux'
 import { Metadata } from 'next'
+import { CHECK_AUTH } from '@/api/auth'
+import { login, logout } from '@/lib/features/authSlice'
+import { useAppDispatch } from '@/lib/hooks'
 
 
 function ItemCatelog() {
@@ -17,6 +20,8 @@ function ItemCatelog() {
   const [isLoading,setIsLoading] = useState(false);
   const [isAvailabilityChecking, setIsAvailabilityChecking] = useState(false);
   const {availabilityDateRange} = useSelector((state:RootState) => state.filterSlice);
+  const {isLoggedIn} = useSelector((state:RootState) => state.auth);
+  const dispatch = useAppDispatch();
   const handleIsAvailabilityChecking = () => {
     setIsAvailabilityChecking(true);
   }
@@ -47,6 +52,31 @@ function ItemCatelog() {
     console.log(items);
   }, [currentPage,availabilityDateRange]);
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      console.log("in here gggggggg");
+      
+      try {
+        const responseData = await CHECK_AUTH().then((response) => {
+          console.log("in here",response);
+          if (response?.data.isAuthenticated == true) {
+            if (!isLoggedIn) {
+              dispatch(login());
+            }
+          } else {
+            dispatch(logout());
+          }
+        });
+      } catch (error) {
+        // dispatch(logout());
+        console.error("Error checking authentication status:", error);
+        // return showToast("error" , <p>User not logged in</p>,{autoClose: 5000,theme:theme.theme});
+        
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   return (
     <div className='px-4 sm:px-10 lg:px-10 py-4 sm:py-8 flex flex-row gap-10'>

@@ -15,23 +15,27 @@ using RentItNow.DTOs.Item;
 using RentItNow.DTOs.Rent;
 using RentItNow.Helpers;
 using RentItNow.Models;
+using RentItNow.Services;
 
 namespace RentItNow.Controllers
 {
    
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CustomersController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly JwtTokenHelper _jwtHelper;
+        private readonly ICustomerService _customerService;
 
-        public CustomersController(IUnitOfWork unitOfWork, IMapper mapper, JwtTokenHelper jwtHelper)
+        public CustomersController(IUnitOfWork unitOfWork, IMapper mapper, JwtTokenHelper jwtHelper,ICustomerService customerService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _jwtHelper = jwtHelper;
+            _customerService = customerService;
         }
 
         [HttpGet("GetAllCustomers")]
@@ -39,7 +43,7 @@ namespace RentItNow.Controllers
         {
             try
             {
-                var cutomers = await _unitOfWork.Customer.GetAllCustomersWithUserAsync();
+                var cutomers = await _customerService.GetAllCustomersAsync();
                 if (cutomers == null || cutomers.Count() == 0)
                 {
                     return NotFound("Renters not found");
@@ -53,7 +57,6 @@ namespace RentItNow.Controllers
             }
         }
         // GET: api/Customers
-        [Authorize(Roles = UserRoles.Customer)]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetCustomerDto>>> GetCustomers()
         {
@@ -92,7 +95,7 @@ namespace RentItNow.Controllers
         {
           try
             {
-                var customer = await _unitOfWork.Customer.GetByIdAsync(id);
+                var customer = await _customerService.GetCustomerById(id);
                 var customerDto = _mapper.Map<GetCustomerDto>(customer);
                 return customerDto;
 
@@ -147,6 +150,7 @@ namespace RentItNow.Controllers
                 if (userCreated.Succeeded)
                 {
                     var customer = _mapper.Map<Customer>(customerDto);
+                    customer.UserId = user.Id;
                     customer.User = user;
                     var customerCreated = await _unitOfWork.Customer.AddAsync(customer);
                     await _unitOfWork.CompleteAsync();

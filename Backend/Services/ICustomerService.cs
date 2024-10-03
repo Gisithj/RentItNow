@@ -8,7 +8,7 @@ namespace RentItNow.Services
 {
     public interface ICustomerService
     {
-
+        public Task<Customer> GetCustomerById(Guid id);
         public Task<IEnumerable<Customer>> GetAllCustomersAsync();
 
     }
