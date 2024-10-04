@@ -165,6 +165,14 @@ internal class Program
 
         var app = builder.Build();
 
+        // Apply migrations automatically
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            var context = services.GetRequiredService<RentItNowDbContext>();
+            context.Database.Migrate();
+        }
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
