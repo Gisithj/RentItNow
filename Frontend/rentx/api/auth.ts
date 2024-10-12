@@ -63,7 +63,8 @@ export const LOGOUT = async ()=> {
         "contactNo":  customer.contactNo,
         "address":  customer.address,
         "userName":  customer.userName,
-        "password":  customer.password
+        "password":  customer.password,
+        "pictureUrl": customer.pictureUrl,
       }
       console.log(newCustomer);
       
@@ -87,7 +88,8 @@ export const LOGOUT = async ()=> {
         "ContactNo":  renter.contactNo,
         "Email": renter.email,
         "UserName":  renter.userName,
-        "Password":  renter.password
+        "Password":  renter.password,
+        "PictureUrl": renter.pictureUrl,
       }
       console.log(newRenter);
       

@@ -28,6 +28,9 @@ using Newtonsoft.Json;
 using NuGet.Configuration;
 using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
+using RentItNow.Services.Impl;
+using RentItNow.Services;
 
 namespace RentItNow.Controllers
 {
@@ -37,23 +40,26 @@ namespace RentItNow.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-       // private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
         private readonly JwtTokenHelper _jwtHelper;
         private readonly RolesHelper _rolesHelpers;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<User> _signInManager;
+        private readonly IAuthService _authService;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IUnitOfWork unitOfWork, 
-            IMapper mapper, 
+            IMapper mapper,
             JwtTokenHelper jwtHelper,
             RolesHelper rolesHelpers,
             UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
             IConfiguration configuration,
-            SignInManager<User> signInManager
+            SignInManager<User> signInManager,
+            IAuthService authService,
+            ILogger<AuthController> logger
             )
         {
             _unitOfWork = unitOfWork;
@@ -64,55 +70,35 @@ namespace RentItNow.Controllers
             _roleManager = roleManager;
             _signInManager = signInManager;
             _rolesHelpers = rolesHelpers;
+            _authService = authService;
+            _logger = logger;
         }
 
         [HttpPost]
         [Route("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var user = await _userManager.FindByNameAsync(loginDto.Username);
-            var result = await _signInManager.PasswordSignInAsync(loginDto.Username, loginDto.Password, isPersistent: false, lockoutOnFailure: false);
-
-            if (result.Succeeded)
+            try
             {
-                var userRoles = await _userManager.GetRolesAsync(user);
-                var authClaims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, user.UserName),
-                        new Claim(ClaimTypes.NameIdentifier, user.Id),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    };
-
-                if (userRoles.Contains(UserRoles.Renter))
-                {
-                    authClaims.Add(new Claim("renterId", _unitOfWork.Renter.GetRenterByUserIdAsync(user.Id).Result.RenterId.ToString()));
-                }else if (userRoles.Contains(UserRoles.Customer))
-                {
-                    authClaims.Add(new Claim("customerId", _unitOfWork.Customer.GetCustomerByUserIdAsync(user.Id).Result.CustomerId.ToString()));
-                }
-                
-                foreach (var userRole in userRoles)
-                {
-                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-                }
-                var tokenHandler = await _jwtHelper.GenerateJwtToken(authClaims, 30);
-                Response.Cookies.Append("token", tokenHandler, new CookieOptions
+                var token = await _authService.LoginAsync(loginDto);
+                Response.Cookies.Append("token", token, new CookieOptions
                 {
                     HttpOnly = true,
                     Secure = true,
                     SameSite = SameSiteMode.None,
-                    //SameSite = SameSiteMode.Strict,
                     Expires = DateTime.UtcNow.AddHours(1),
+                    Domain = _configuration["CookieDomain"]
                 });
                 return Ok(new
                 {
-                    token = tokenHandler,
+                    token = token,
                     expiration = 30
                 });
             }
-            else
+            catch (Exception e)
             {
-               return Unauthorized(new { message = "Invalid username or password" });
+
+                return BadRequest(e.Message);
             }
         }
 
@@ -120,19 +106,43 @@ namespace RentItNow.Controllers
         public async Task<IActionResult> Logout()
         {
             // Remove the authentication cookie
+            var tokenCookie = Request.Cookies["token"];
+            _logger.LogInformation($"Token cookie details: {tokenCookie}");
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(-1),
+                Domain = _configuration["CookieDomain"]
+            };
+
+            // Attempt to delete the token cookie
             if (Request.Cookies.ContainsKey("token"))
             {
-
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
-                Response.Cookies.Delete("token");
+                _logger.LogInformation("Token cookie found, attempting to delete");
+                Response.Cookies.Delete("token", cookieOptions);
             }
             else
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User not logged in token not found." });
+                _logger.LogWarning("Token cookie not found");
             }
+
+            _logger.LogInformation("Logout completed");
+
+            //if (Request.Cookies.ContainsKey("token"))
+            //{
+            //    Response.Cookies.Delete("token");
+            //}
+            //else
+            //{
+            //    return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User not logged in token not found." });
+            //}
 
 
             // Return a response indicating successful logout
@@ -250,7 +260,8 @@ namespace RentItNow.Controllers
                         HttpOnly = true,
                         Secure = true,
                         SameSite = SameSiteMode.None,
-                        Expires = DateTime.UtcNow.AddHours(1)
+                        Expires = DateTime.UtcNow.AddHours(1),
+                        Domain = _configuration["CookieDomain"]
                     });
 
                     return Ok(token);
@@ -292,7 +303,7 @@ namespace RentItNow.Controllers
 
                 if (userCreated.Succeeded)
                 {
-                    await _rolesHelpers.EnsureRolesExist(UserRoles.Customer, UserRoles.User);
+                    await _rolesHelpers.EnsureRolesExist(UserRoles.Renter, UserRoles.User);
 
                     await _userManager.AddToRolesAsync(user, new[] { UserRoles.Renter, UserRoles.User });
 
@@ -320,7 +331,8 @@ namespace RentItNow.Controllers
                         HttpOnly = true,
                         Secure = true,
                         SameSite = SameSiteMode.None,
-                        Expires = DateTime.UtcNow.AddHours(1)
+                        Expires = DateTime.UtcNow.AddHours(1),
+                        Domain = _configuration["CookieDomain"]
                     });
 
                     return Ok(token);
@@ -390,8 +402,8 @@ namespace RentItNow.Controllers
                         HttpOnly = true,
                         Secure = true,
                         SameSite = SameSiteMode.None,
-                        //SameSite = SameSiteMode.Strict,
                         Expires = DateTime.UtcNow.AddHours(1),
+                        Domain = _configuration["CookieDomain"]
                     });
                     //return Ok(jwt);
                     return Redirect("https://localhost:3000/rent-tools");
@@ -459,6 +471,7 @@ namespace RentItNow.Controllers
                         Secure = true,
                         SameSite = SameSiteMode.None,
                         Expires = DateTime.UtcNow.AddHours(1),
+                        Domain = _configuration["CookieDomain"]
                     });
                     //return Ok(jwt);
 

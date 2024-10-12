@@ -1,7 +1,12 @@
-﻿namespace RentItNow.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RentItNow.Models
 {
     public class Chat
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
         public DateTime Timestamp { get; set; }
         public string SenderId { get; set; } = string.Empty;

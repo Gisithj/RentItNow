@@ -16,10 +16,10 @@ namespace RentItNow.Models
         public ICollection<RentalOption> RentalOptions { get; set; } = null!;
         public ICollection<ItemSpecification> Specifications { get; set; } = null!;
         public ICollection<ItemImage>? ImageURLs { get; set; }
-        public Boolean IsRented { get; set; }
+        public Boolean IsRented { get; set; } = false;
         public RentalStatus RentalStatus { get; set; } = RentalStatus.Available;
         public ICollection<RentalItem> RentalItem { get; set; } = new List<RentalItem>();
-        public Guid RenterId { get; set; }  
+        public Guid RenterId { get; set; }  = Guid.Empty;
         public Renter Renter { get; set; } = null!;
     }
 }

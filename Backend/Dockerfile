@@ -7,6 +7,7 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG ASPNETCORE_ENVIRONMENT=Production
 WORKDIR /src
 COPY ["RentItNow.csproj", "."]
 RUN dotnet restore "./RentItNow.csproj"
@@ -21,4 +22,8 @@ RUN dotnet publish "./RentItNow.csproj" -c $BUILD_CONFIGURATION -o /app/publish 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY appsettings.json .
+COPY appsettings.Development.json .
+COPY appsettings.Production.json .
+ENV ASPNETCORE_ENVIRONMENT=Production
 ENTRYPOINT ["dotnet", "RentItNow.dll"]

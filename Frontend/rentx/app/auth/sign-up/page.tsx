@@ -5,7 +5,8 @@ import { login } from '@/lib/features/authSlice';
 import { useAppDispatch } from '@/lib/hooks';
 import { startConnection } from '@/utils/signalrService';
 import { passowrdError, validateEmail, validatePassword } from '@/utils/validation-helper';
-import { Button, Input, Link, Progress } from '@nextui-org/react'
+import { Button, Input, Link, Progress, Spinner } from '@nextui-org/react'
+import { set } from 'lodash';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { useMemo, useState } from 'react'
 import { FcGoogle } from 'react-icons/fc';
@@ -24,12 +25,14 @@ function SignUp() {
   const [valuePostalCode, setValuePostalCode] = useState(""); 
   const [valueAddress, setValueAddress] = useState(""); 
   const [valueNIC, setValueNIC] = useState(""); 
-  //const [valueHouseNo, setValuePassword] = useState(""); 
+  const [pictureUrl, setPictureUrl] = useState("https://rentx.blob.core.windows.net/rentximages/user_icon.png"); 
+  const [isLoginStarted,setIsLoginStarted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   const dispatch = useAppDispatch()
   const router = useRouter()
   const searchParams = useSearchParams();
-  console.log(searchParams);
-  
+
   const userType = searchParams.get('userType');
 
   const isInvalidEmail = useMemo(() => {
@@ -39,21 +42,27 @@ function SignUp() {
 
   const isInvalidPassword = useMemo(() => {
     if (valuePassword === "") return false;
-    console.log(valuePassword);
     return validatePassword(valuePassword) ? false : true;
   }, [valuePassword]);
   
   const handleStepChange = ()=>{
+    console.log("in the handle step change");
+    console.log(currentStep);
+    console.log(totalSteps);
+    console.log(isInvalidEmail,isInvalidPassword);
+    
+    
+    
+    setIsSubmitted(true);
     if(currentStep!=totalSteps){
-      if(!isInvalidEmail && !isInvalidPassword && (valueEmail!="") && (valuePassword!="")){
+      if(!isInvalidEmail && !isInvalidPassword && (valueEmail!="") && (valuePassword!="") && (valueFirstName!="") && (valueMobileNo!="") ){
         setValueProgressValue((prev)=>prev+50)
         setCurrentStep((prev)=>prev+1)
       }
      
     }else{
-      if(currentStep==totalSteps){
-        console.log("submitted");
-        
+      if(currentStep==totalSteps && (valuePostalCode!="") && (valueAddress!="") && (valueNIC!="") ){
+        console.log("submitted");        
         handleSubmit()
       }
     }
@@ -65,14 +74,9 @@ function SignUp() {
       setCurrentStep((prev)=>prev-1)
     }
   }
-  
-  const [isVisible, setIsVisible] = useState(false);
-
-  const toggleVisibility = () => setIsVisible(!isVisible);  
-
-  const handleSubmit = async()=>{
+    const handleSubmit = async()=>{
     console.log("in the handle submit");
-    
+    setIsLoginStarted(true);
     if(currentStep==totalSteps){
       try {
         console.log(userType);
@@ -86,7 +90,8 @@ function SignUp() {
           "contactNo": valueMobileNo,
           "address":valueAddress ,
           "userName":valueFirstName+valueLastName ,
-          "password": valuePassword
+          "password": valuePassword,
+          "pictureUrl": pictureUrl,
         }
           const responseData = await REGISTER_RENTER(newCustomer)
           if( responseData?.status===200){ 
@@ -102,7 +107,8 @@ function SignUp() {
           "contactNo": valueMobileNo,
           "address":valueAddress ,
           "userName":valueFirstName+valueLastName ,
-          "password": valuePassword
+          "password": valuePassword,
+          "pictureUrl": pictureUrl,
         }
           const responseData = await REGISTER_CUSTOMER(newCustomer)
           if( responseData?.status===200){ 
@@ -113,6 +119,7 @@ function SignUp() {
         
         
       } catch (error) {
+        setIsLoginStarted(false);
         console.log(error);
         
       }
@@ -146,6 +153,7 @@ function SignUp() {
                 label="First name" 
                 value={valueFirstName}
                 onValueChange={setValueFirstName} 
+                validate={(value) => isSubmitted && value.length === 0 ? "First name is required" : true}
                 isRequired/>
               <Input 
                 type="text" 
@@ -153,40 +161,56 @@ function SignUp() {
                 label="Last name" 
                 value={valueLastName}
                 onValueChange={setValueLastName} 
-                isRequired/>
+                />
             </div>
             <Input
               type="email"
               variant={"bordered"}
               label="Email"
-              isInvalid={isInvalidEmail}
-              color={isInvalidEmail ? "danger" : "default"}
-              errorMessage={isInvalidEmail && "Please enter a valid email"}
-              onValueChange={setValueEmail}/>
+              validate={(value) => isSubmitted ? isInvalidEmail || value.length === 0?"Email is required":true: isInvalidEmail?"Please enter a valid email":true}
+              onValueChange={setValueEmail}
+              isRequired
+              />
             <Input
-              type={isVisible ? "text" : "password"}
+              type={"password"}
               variant={"bordered"}
               label="Password"
-              endContent={
-                <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
-                  {isVisible ? (
-                    <VscEye className="text-2xl text-default-400 pointer-events-none" />
-                  ) : (
-                    <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
-                  )}
-                </button>
-              }
-              isInvalid={isInvalidPassword}
-              color={isInvalidPassword ? "danger" : "default"}
-              errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`}
-              onValueChange={setValuePassword}/>
-            <Input type="text" variant={"bordered"} label="Mobile no" onValueChange={setValueMobileNo}/>
+              validate={(value) => 
+                isSubmitted ? 
+                  isInvalidPassword || value.length === 0?"Password is required":true
+                : 
+                isInvalidPassword?"Please enter a valid email":true}
+              onValueChange={setValuePassword}
+              isRequired
+              />
+            <Input 
+              type="text" 
+              variant={"bordered"} 
+              label="Mobile no" 
+              onValueChange={setValueMobileNo}
+              validate={(value) => isSubmitted && value.length === 0 ? "Mobile no is required" : true}
+              isRequired
+              />
           </div>
           // :currentStep==2?<div className="flex flex-col gap-4 w-full">
            :<div className="flex flex-col gap-4 w-full">
             <div className="flex gap-4">
-              <Input type="text" variant={"bordered"} label="House no" onValueChange={setValueHouseNo}/> 
-              <Input type="text" variant={"bordered"} label="Postal code" onValueChange={setValuePostalCode} isRequired/>
+              <Input
+                type="text"
+                variant={"bordered"}
+                label="NIC"   
+                value={valueNIC}          
+                onValueChange={setValueNIC}
+                validate={(value) => isSubmitted && value.length === 0 ? "NIC no is required" : true}
+                isRequired
+                />
+              <Input 
+                  type="text"
+                  variant={"bordered"} 
+                  label="Postal code" 
+                  onValueChange={setValuePostalCode} 
+                  validate={(value) => isSubmitted && value.length === 0 ? "Postal code is required" : true}
+                  isRequired/>
             </div>
             <Input
               type="text"
@@ -194,17 +218,11 @@ function SignUp() {
               label="Address"
               value={valueAddress}           
               onValueChange={setValueAddress}
+              validate={(value) => isSubmitted && value.length === 0 ? "Address is required" : true}
               isRequired
               />
-            <Input
-              type="text"
-              variant={"bordered"}
-              label="NIC"   
-              value={valueNIC}          
-              onValueChange={setValueNIC}
-              isRequired
-              />
-            <Input type="text" variant={"bordered"} label="Mobile no" />
+           
+            {/* <Input type="text" variant={"bordered"} label="Mobile no" /> */}
           </div>
           // :currentStep==3?<div className="flex flex-col gap-4 w-full">
           //   <div className="flex gap-4">
@@ -255,23 +273,28 @@ function SignUp() {
           }
           {
             currentStep==totalSteps?
-              <Button color='primary' onClick={handleStepChange} className='w-full'>Sign up</Button>
+              <Button 
+                color='primary' 
+                onClick={handleStepChange} 
+                className='w-full'
+                endContent={isLoginStarted? <Spinner size={"sm"} color='white'/>:null}
+                >Sign up</Button>
             :
               <Button color='primary' onClick={handleStepChange} className='w-full'>Next</Button>
           }
           <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
-                    <span className="text-gray-500 text-sm px-2 bg-black">or Sign up with</span>
+                    <span className="text-gray-500 text-sm px-2 bg-foreground-50">or</span>
                   </div>
                   <Button 
                       as={Link} 
                       color="primary" 
-                      href="https://localhost:44375/api/Auth/signin-google?usertype=customer" 
+                      href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/Auth/signin-google?usertype=${userType}`}
                       variant="bordered" 
                       startContent={<FcGoogle size={20}/>}
                       className='w-full'>
                   Sign up with Google
                 </Button>
-                <p>Already have an account? <Link href="/auth/sign-in">Sign in</Link></p>
+                <p className='text-xs'>Already have an account? <Link href="/auth/sign-in" className='text-xs'>Sign in</Link></p>
           </form>
         </div>
       </div>
