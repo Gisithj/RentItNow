@@ -137,6 +137,7 @@ export interface CreateUser{
     contactNo: string
     userName: string
     password: string
+    pictureUrl:string,
 }
 export interface Customer {
     

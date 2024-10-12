@@ -6,7 +6,7 @@ import { RootState } from '@/lib/store';
 import { startConnection } from '@/utils/signalrService';
 import { passowrdError,validatePassword } from '@/utils/validation-helper';
 import { Input } from '@nextui-org/input'
-import { Button, Card, CardBody, Link, Tab, Tabs } from '@nextui-org/react';
+import { Button, Card, CardBody, Link, Spinner, Tab, Tabs } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react'
 import { VscEye, VscEyeClosed } from 'react-icons/vsc';
@@ -20,7 +20,7 @@ function SignIn({onClose}:{onClose:()=>void}) {
   const [valuePassword, setValuePassword] = useState(""); 
   const [isCredentialsWrong,setIsCredentialsWrong] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
-  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+  const [isLoginStarted,setIsLoginStarted] = useState(false);
   const dispatch = useAppDispatch();
   const router = useRouter();
 
@@ -40,7 +40,7 @@ function SignIn({onClose}:{onClose:()=>void}) {
           "username":valueUsername ,
           "password": valuePassword
         }
-        
+        setIsLoginStarted(true);
         const responseData = await LOGIN(loginCredentials)       
         if( responseData?.status===200){ 
           localStorage.setItem('token',responseData.data.token)
@@ -105,78 +105,56 @@ function SignIn({onClose}:{onClose:()=>void}) {
           </div>
           <form action="" className='flex flex-col gap-4 w-full'>
           <Tabs aria-label="Options" onSelectionChange={(e)=>handleTabs(e)} className='flex justify-center'>
-            <Tab key="customer" title="Customer" className='flex flex-col gap-4'>
-              {/* <Card className='w-full'>
-                <CardBody className='w-full flex flex-col gap-4'> */}
+            <Tab key="customer" title="Customer" className='flex flex-col gap-4 items-center'>
                   <Input
                     id='username'
                     type="text"
                     variant={"bordered"}
                     label="Username"
-                    // isInvalid={isInvalidEmail}
-                    // color={isInvalidEmail ? "danger" : "default"}
-                    // errorMessage={isCredentialsWrong && "Please enter a valid Username"}
                     onValueChange={setValueUsername}/>
                   <Input
                     id='password'
                     type={isVisible ? "text" : "password"}
                     variant={"bordered"}
                     label="Password"
-                    endContent={
-                      <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
-                        {isVisible ? (
-                          <VscEye className="text-2xl text-default-400 pointer-events-none" />
-                        ) : (
-                          <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
-                        )}
-                      </button>
-                    }
                     isInvalid={isInvalidPassword}
                     color={isInvalidPassword ? "danger" : "default"}
                     errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`||
                     isCredentialsWrong && "Incorrect username or password"}
                     onValueChange={setValuePassword}
                     />
-                   <Button id="log_in" color='primary' onClick={handleSubmit} className='w-full'>Log in</Button>
-                  <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
-                    <span className="text-gray-500 text-sm px-2 bg-foreground-50">or Login with</span>
+                   <Button 
+                      id="log_in" 
+                      color='primary' 
+                      onClick={handleSubmit} 
+                      className='w-full'
+                      endContent={isLoginStarted? <Spinner size={"sm"} color='white'/>:null}
+                      >Sign in</Button>
+                  <div className="h-5 border-b-1 border-gray-500 text-2xl text-center w-[90%] mb-4">
+                    <span className="text-gray-500 text-sm px-2 bg-foreground-50">or</span>
                   </div>
                   <Button 
                       as={Link} 
                       color="primary" 
-                      href="https://localhost:44375/api/Auth/signin-google?usertype=customer" 
+                      href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/Auth/signin-google?usertype=customer`}
                       variant="bordered" 
                       startContent={<FcGoogle size={20}/>}
                       className='w-full'>
                   Sign in with Google
                 </Button>
-                <p>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=customer">Sign up</Link></p>
+                <p className='text-xs'>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=customer" className='text-xs'>Sign up</Link></p>
                  
             </Tab>
-            <Tab key="renter" title="Renter" className='flex flex-col gap-4'>
-              {/* <Card>
-                <CardBody> */}
+            <Tab key="renter" title="Renter" className='flex flex-col gap-4 items-center'>
                 <Input
               type="text"
               variant={"bordered"}
               label="Username"
-              // isInvalid={isInvalidEmail}
-              // color={isInvalidEmail ? "danger" : "default"}
-              // errorMessage={isInvalidEmail && "Please enter a valid Username"}
               onValueChange={setValueUsername}/>
             <Input
               type={isVisible ? "text" : "password"}
               variant={"bordered"}
               label="Password"
-              endContent={
-                <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
-                  {isVisible ? (
-                    <VscEye className="text-2xl text-default-400 pointer-events-none" />
-                  ) : (
-                    <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
-                  )}
-                </button>
-              }
               isInvalid={isInvalidPassword}
               color={isInvalidPassword ? "danger" : "default"}
               errorMessage={isInvalidPassword && ` Password must contain ${passowrdError(valuePassword)}.`||
@@ -185,21 +163,26 @@ function SignIn({onClose}:{onClose:()=>void}) {
               />
           
         
-          <Button color='primary' onClick={handleSubmit} className='w-full'>Log in</Button>
-            <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
-                    <span className="text-gray-500 text-sm px-2 bg-black">or Login with</span>
+          <Button 
+              color='primary' 
+              onClick={handleSubmit} 
+              className='w-full'
+              endContent={isLoginStarted? <Spinner size={"sm"} color='white'/>:null}
+              >Sign in</Button>
+            <div className="h-5 border-b-1 border-gray-500 text-2xl text-center w-[90%] mb-4">
+                    <span className="text-gray-500 text-sm px-2 bg-foreground-50">or</span>
                   </div>
             <Button 
             as={Link} 
             color="primary" 
-            href="https://localhost:44375/api/Auth/signin-google?usertype=renter" 
+            href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/Auth/signin-google?usertype=renter`}
             variant="bordered" 
             startContent={<FcGoogle size={20}/>}            
             className='w-full'  >
                   Sign in with Google
                 </Button>
             
-            <p>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=renter">Sign up</Link></p>
+            <p className='text-xs'>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=renter" className='text-xs'>Sign up</Link></p>
             </Tab>          
           </Tabs>
            

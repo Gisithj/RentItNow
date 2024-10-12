@@ -60,6 +60,7 @@ export const authSlice = createAppSlice({
       console.log("called logout");
       state.isLoggedIn = false;
       localStorage.removeItem('token');
+      console.log("token removed",localStorage.getItem('token'));
     }),
     checkAuth:  create.reducer((state) => {
       if (typeof window !== 'undefined') { // Check for window before access

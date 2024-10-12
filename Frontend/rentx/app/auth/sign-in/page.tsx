@@ -6,7 +6,7 @@ import { RootState } from '@/lib/store';
 import { connection, startConnection } from '@/utils/signalrService';
 import { passowrdError,validatePassword } from '@/utils/validation-helper';
 import { Input } from '@nextui-org/input'
-import { Button, Card, CardBody, Divider, Link, Tab, Tabs } from '@nextui-org/react';
+import { Button, Card, CardBody, Divider, Link, Spinner, Tab, Tabs } from '@nextui-org/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react'
 import { FcGoogle } from 'react-icons/fc';
@@ -27,6 +27,7 @@ function SignIn() {
   const router = useRouter();
   const searchParams = useSearchParams() 
   const redirectUri = searchParams.get('redirect') 
+  const [isLoginStarted,setIsLoginStarted] = useState(false);
 
   // const isInvalidPassword = useMemo(() => {
   //   if (valuePassword === "") return false;
@@ -38,12 +39,17 @@ function SignIn() {
 
   const handleSubmit = async()=>{
       try {
+        if(!valueUsername || !valuePassword){
+          setIsCredentialsWrong(true);
+          return;
+        };
         const loginCredentials = {        
           "username":valueUsername ,
           "password": valuePassword
         }
         
-        const responseData = await LOGIN(loginCredentials)       
+        setIsLoginStarted(true);  
+        const responseData = await LOGIN(loginCredentials)     
         if( responseData?.status===200){ 
           localStorage.setItem('token',responseData.data.token)
           
@@ -55,13 +61,19 @@ function SignIn() {
             }      
         }else if(responseData?.status===401){                 
           setIsCredentialsWrong(true)
+          setIsLoginStarted(false);  
         } 
       } catch (error) {
+        setIsLoginStarted(false);  
         console.log(error);
       }
     }
     
     useEffect(()=>{
+      console.log("in the use effect sign in");
+      console.log(isLoggedIn);
+      console.log(user);
+
       if(isLoggedIn && user){        
         connection.state =="Disconnected"? startConnection():null;
         if(user.userRoles.includes("Renter")){
@@ -93,8 +105,6 @@ function SignIn() {
           <form action="" className='flex flex-col gap-4 w-full'>
           <Tabs aria-label="Options" onSelectionChange={(e)=>handleTabs(e)} className='flex justify-center w-full'>
             <Tab key="customer" title="Customer" className='flex flex-col gap-4 items-center w-full'>
-              {/* <Card className='w-full'>
-                <CardBody className='w-full flex flex-col gap-4'> */}
                   <Input
                     id='username'
                     type="text"
@@ -108,39 +118,34 @@ function SignIn() {
                     type={isVisible ? "text" : "password"}
                     variant={"bordered"}
                     label="Password"
-                    endContent={
-                      <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
-                        {isVisible ? (
-                          <VscEye className="text-2xl text-default-400 pointer-events-none" />
-                        ) : (
-                          <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
-                        )}
-                      </button>
-                    }
                     isInvalid={isCredentialsWrong}
                     color={isCredentialsWrong ? "danger" : "default"}
                     errorMessage={isCredentialsWrong && "Incorrect username or password"}
                     onValueChange={setValuePassword}
                     />
-                  <Button id="log_in" color='primary' onClick={handleSubmit} className='w-full'>Log in</Button>
-                  <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
-                    <span className="text-gray-500 text-sm px-2 bg-black">or Login with</span>
+                  <Button 
+                    id="log_in" 
+                    color='primary' 
+                    onClick={handleSubmit} 
+                    className='w-full'
+                    endContent={isLoginStarted? <Spinner size={"sm"} color='white'/>:null}
+                    >Sign in</Button>
+                  <div className="h-5 border-b-1 border-gray-500 text-2xl text-center w-[90%] mb-4">
+                    <span className="text-gray-500 text-sm px-2 bg-foreground-50">or</span>
                   </div>
                   <Button 
                       as={Link} 
                       color="primary" 
-                      href="https://localhost:44375/api/Auth/signin-google?usertype=customer" 
+                      href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/Auth/signin-google?usertype=customer`}
                       variant="bordered" 
                       startContent={<FcGoogle size={20}/>}
                       className='w-full'>
                   Sign in with Google
                 </Button>
-                <p>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=customer">Sign up</Link></p>
+                <p className='text-xs'>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=customer" className='text-xs'>Sign up</Link></p>
                  
             </Tab>
             <Tab key="renter" title="Renter" className='flex flex-col gap-4 items-center'>
-              {/* <Card>
-                <CardBody> */}
                 <Input
               type="text"
               variant={"bordered"}
@@ -152,36 +157,32 @@ function SignIn() {
               type={isVisible ? "text" : "password"}
               variant={"bordered"}
               label="Password"
-              endContent={
-                <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
-                  {isVisible ? (
-                    <VscEye className="text-2xl text-default-400 pointer-events-none" />
-                  ) : (
-                    <VscEyeClosed className="text-2xl text-default-400 pointer-events-none" />
-                  )}
-                </button>
-              }
               isInvalid={isCredentialsWrong}
               color={isCredentialsWrong ? "danger" : "default"}
               errorMessage={isCredentialsWrong && "Incorrect username or password"}
               onValueChange={setValuePassword}
               />
           
-            <Button color='primary' onClick={handleSubmit} className='w-full'>Log in</Button>
-            <div className="h-5 border-b-2 border-gray-500 text-2xl text-center w-[90%] mb-4">
-                    <span className="text-gray-500 text-sm px-2 bg-black">or Login with</span>
+            <Button 
+              color='primary' 
+              onClick={handleSubmit} 
+              className='w-full'
+              endContent={isLoginStarted? <Spinner size={"sm"} color='white'/>:null}
+              >Sign in</Button>
+            <div className="h-5 border-b-1 border-gray-500 text-2xl text-center w-[90%] mb-4">
+                    <span className="text-gray-500 text-sm px-2 bg-foreground-50">or</span>
                   </div>
             <Button 
             as={Link} 
             color="primary" 
-            href="https://localhost:44375/api/Auth/signin-google?usertype=renter" 
+            href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/Auth/signin-google?usertype=renter`}
             variant="bordered" 
             startContent={<FcGoogle size={20}/>}            
             className='w-full'  >
                   Sign in with Google
                 </Button>
             
-            <p>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=renter">Sign up</Link></p>
+            <p className='text-xs'>Don&apos;t have a account yet? <Link href="/auth/sign-up?userType=renter" className='text-xs'>Sign up</Link></p>
             </Tab>           
           </Tabs>
            

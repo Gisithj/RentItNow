@@ -1,7 +1,7 @@
-import { HubConnectionBuilder } from '@microsoft/signalr';
+import  { HubConnectionBuilder,HttpTransportType  } from '@microsoft/signalr';
 
 let connection = new HubConnectionBuilder()
-    .withUrl("https://localhost:44375/chat", { withCredentials: true })
+    .withUrl(`${process.env.NEXT_PUBLIC_BACKEND_CHAT_URL}`, {  withCredentials: true })
     .build();
 
 const startConnection = async () => connection.start()

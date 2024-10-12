@@ -17,8 +17,20 @@ namespace RentItNow.Data
         {
             base.OnModelCreating(modelBuilder);
 
-
-
+            //foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            //{
+            //    foreach (var property in entityType.GetProperties())
+            //    {
+            //        if (property.ClrType == typeof(Guid))
+            //        {
+            //            property.SetColumnType("uuid");
+            //        }
+            //        else if (property.ClrType == typeof(string))
+            //        {
+            //            property.SetColumnType("text");
+            //        }
+            //    }
+            //}
             modelBuilder.Entity<Renter>()
                 .HasMany(e => e.Items)
                 .WithOne(e => e.Renter)
@@ -50,27 +62,28 @@ namespace RentItNow.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Messages>()
-                .HasOne(s=>s.Sender)
+                .HasOne(s => s.Sender)
                 .WithMany()
-                .HasForeignKey(s=>s.SenderId)
+                .HasForeignKey(s => s.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Messages>()
                 .HasOne(r => r.Receiver)
                 .WithMany()
-                .HasForeignKey(r=>r.ReceiverId)
+                .HasForeignKey(r => r.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Messages>()
                 .HasOne(m => m.Chat)
-                .WithMany(c=>c.Messages)
-                .HasForeignKey(c=>c.ChatId)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(c => c.ChatId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Chat>()
                 .HasOne(c => c.Sender)
                 .WithMany()
                 .HasForeignKey(c => c.SenderId)
-                .OnDelete(DeleteBehavior.Restrict); // Change to Restrict or NoAction
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Chat>()
                 .HasOne(c => c.Receiver)
@@ -79,24 +92,24 @@ namespace RentItNow.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RenterConfig>()
-                .HasOne(r=>r.Renter)
+                .HasOne(r => r.Renter)
                 .WithOne()
-                .HasForeignKey<RenterConfig>(r=>r.RenterId)
+                .HasForeignKey<RenterConfig>(r => r.RenterId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-
         }
+
         public override DbSet<User> Users => Set<User>();
         public DbSet<Admin> Admins => Set<Admin>();
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Renter> Renters => Set<Renter>();
         public DbSet<Item> Items => Set<Item>();
+        public DbSet<ItemImage> ItemsImage => Set<ItemImage>();
+        public DbSet<ItemSpecification> ItemSpecification => Set<ItemSpecification>();
         public DbSet<RentalItem> RentalItem => Set<RentalItem>();
         public DbSet<RentalOption> RentalOptions => Set<RentalOption>();
         public DbSet<Messages> Messages => Set<Messages>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<Chat> Chats => Set<Chat>();
         public DbSet<RenterConfig> RenterConfigs => Set<RenterConfig>();
-
     }
 }

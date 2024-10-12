@@ -1,14 +1,10 @@
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using RentItNow.BackgroundServices;
 using RentItNow.configurations;
@@ -18,8 +14,6 @@ using RentItNow.Models;
 using RentItNow.Services;
 using RentItNow.Services.Impl;
 using RentItNow.websocket;
-using System.Reflection.Emit;
-using System.Security.Claims;
 using System.Text;
 
 
@@ -29,17 +23,7 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        var jwtKey = builder.Configuration["JwtSettings:Key"];
-        // Convert JWT key to SymmetricSecurityKey
-        var jwtSecKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-
-        var jwtIssuer = builder.Configuration["JwtSettings:Issuer"];
-        var jwtAudience = builder.Configuration["JwtSettings:Audience"];
-        var environment = builder.Configuration["ASPNETCORE_ENVIRONMENT"];
-        var googleClientId = builder.Configuration["GoogleOAuth:GoogleClientId"];
-        var googleClientSecret = builder.Configuration["GoogleOAuth:GoogleClientSecret"];
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>();
+        builder.Configuration.AddEnvironmentVariables();
 
         var keyVaultUri = builder.Configuration["KeyVault:Uri"];
 
@@ -50,11 +34,36 @@ internal class Program
                 new DefaultAzureCredential());
         }
 
+        var jwtKey = builder.Configuration["JwtSettings:Key"];
+        var jwtSecKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
+        var jwtIssuer = builder.Configuration["JwtSettings:Issuer"];
+        var jwtAudience = builder.Configuration["JwtSettings:Audience"];
+        var environment = builder.Configuration["ASPNETCORE_ENVIRONMENT"];
+        var googleClientId = builder.Configuration["GoogleOAuth:GoogleClientId"];
+        var googleClientSecret = builder.Configuration["GoogleOAuth:GoogleClientSecret"];
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        Console.WriteLine($"Allowed Origins: {string.Join(",", connectionString)}");
+        var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>();
+
+  
         // AddAsync services to the container.
-        builder.Services.AddDbContext<RentItNowDbContext>(
-            options => options.UseSqlServer(connectionString)
+        builder.Services.AddDbContext<RentItNowDbContext>(options =>
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+            npgsqlOptions.EnableRetryOnFailure(
+                errorCodesToAdd: null,
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30))
+            )
        );
+        // options.UseSqlServer(connectionString, sqlOptions =>
+        //     sqlOptions.EnableRetryOnFailure(
+        //         maxRetryCount: 5,
+        //         maxRetryDelay: TimeSpan.FromSeconds(30),
+        //         errorNumbersToAdd: null)
+        //     )
+        //);
         builder.Services.AddCors(
         options =>
         {
@@ -67,6 +76,13 @@ internal class Program
                             .AllowCredentials();
                });
 
+        });
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
         });
 
         builder.Services.AddHostedService<RentalStartEndService>();
@@ -99,6 +115,7 @@ internal class Program
                 ValidAudience = jwtAudience,
                 IssuerSigningKey = jwtSecKey
             };
+
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = context =>
@@ -109,9 +126,24 @@ internal class Program
             };
         })
         //.AddCookie()
-        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
-        .AddCookie("Identity.Application")
-        .AddCookie(IdentityConstants.ExternalScheme)
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        })
+        .AddCookie("Identity.Application", options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        })
+        .AddCookie(IdentityConstants.ExternalScheme, options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        })
         .AddGoogle(options =>
          {
              options.ClientId = googleClientId;
@@ -124,9 +156,9 @@ internal class Program
         ;
         builder.Services.Configure<CookiePolicyOptions>(options =>
         {
-            // This lambda determines whether user consent for non-essential cookies is needed for a given request.
             options.CheckConsentNeeded = context => true;
-            options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+            options.MinimumSameSitePolicy = SameSiteMode.None;
+            options.Secure = CookieSecurePolicy.Always;
         });
         builder.Services.AddAuthorization();
 
@@ -154,7 +186,7 @@ internal class Program
         builder.Services.AddScoped<IItemService, ItemService>();
         builder.Services.AddScoped<ICustomerService, CustomerService>();
         builder.Services.AddScoped<IRenterConfigService, RenterConfigService>();
-
+        builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IRenterService, RenterService>();
         // Register Unit of Work
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -165,27 +197,39 @@ internal class Program
 
         var app = builder.Build();
 
-        // Apply migrations automatically
-        using (var scope = app.Services.CreateScope())
-        {
-            var services = scope.ServiceProvider;
-            var context = services.GetRequiredService<RentItNowDbContext>();
-            context.Database.Migrate();
-        }
+
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-            app.UseForwardedHeaders();
             app.UseSwagger();
             app.UseSwaggerUI();
 
         }
         else
         {
-            app.UseForwardedHeaders();
+            // Apply migrations automatically
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var context = services.GetRequiredService<RentItNowDbContext>();
+                try
+                {
+                    context.Database.OpenConnection();
+                    context.Database.CloseConnection();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to connect to the database: {ex.Message}");
+                    // Handle the exception (e.g., log it, rethrow it, etc.)
+                    throw;
+                }
+
+                context.Database.Migrate();
+            }
         }
 
+        app.UseForwardedHeaders();
         app.UseHttpsRedirection();
         app.UseCors("AllowAnyOrigin");
         app.MapHub<RentalRequestHub>("/chat");

@@ -66,12 +66,12 @@ export default function NavBar() {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
 
   const handleLogout = async () => {
-    stopConnection();
+    await stopConnection();
     const responseData = await LOGOUT();
     if (responseData?.status === 200) {
       dispatch(logout());
       localStorage.removeItem("token");
-      router.push("/auth/sign-in");
+      // router.push("/auth/sign-in");
     }
   };
 
@@ -151,7 +151,7 @@ const checkAuth = async () => {
       }
     });
   } catch (error) {
-    dispatch(logout());
+    // dispatch(logout());
     console.error("Error checking authentication status:", error);
     return showToast("error" , <p>User not logged in</p>,{autoClose: 5000,theme:theme.theme});
     
@@ -159,6 +159,8 @@ const checkAuth = async () => {
 };
 
   useEffect(() => {  
+    console.log("called twice in navbar");
+    
     checkAuth();
     fetchNotification();
     const interval = setInterval(() => {
@@ -166,7 +168,7 @@ const checkAuth = async () => {
     }, 15 * 60 * 1000); 
 
     return () => clearInterval(interval);
-  }, [isLoggedIn, currentUser]);
+  }, [isLoggedIn]);
 
 
   useEffect(() => {

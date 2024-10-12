@@ -24,6 +24,7 @@ namespace RentItNow.websocket
         private readonly INotificationService _notificationService;
         private readonly IChatService _chatService;
         private readonly UserManager<User> _userManager;
+        private readonly ILogger<RentalRequestHub> _logger;
 
 
         public RentalRequestHub(
@@ -31,13 +32,15 @@ namespace RentItNow.websocket
             IMapper mapper, 
             UserManager<User> userManager, 
             INotificationService notificationService,
-            IChatService chatService)
+            IChatService chatService,
+            ILogger<RentalRequestHub> logger)
         {
             _messageService = messageService;
             _userManager = userManager;
             _notificationService = notificationService;
             _chatService = chatService;
             _mapper = mapper;
+            _logger = logger;
         }
         public async Task SendOffersToUser(string message)
         {
@@ -48,8 +51,10 @@ namespace RentItNow.websocket
 
         public override async Task OnConnectedAsync()
         {
-            var httpContext = Context.GetHttpContext();
+            _logger.LogInformation("Connection intiated: {ConnectionId}", Context.ConnectionId);
 
+            var httpContext = Context.GetHttpContext();
+            _logger.LogInformation("Connection intiated: {context}", httpContext);
             var token = httpContext?.Request.Cookies["token"];
 
             if (string.IsNullOrEmpty(token))
